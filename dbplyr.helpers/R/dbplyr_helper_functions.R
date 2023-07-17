@@ -25,23 +25,23 @@
 #' 2020-01-09 SA v1 split dbplyr support out from utility_functions.R
 #' #############################################################################
 
-# connection details
-DEFAULT_SERVER <- "[]"
-DEFAULT_DATABASE <- "[]"
-DEFAULT_PORT <- NA
-# DO NOT RELEASE THESE VALUES
-# DO NOT RELEASE THESE VALUES
-
-# error if connection details are missing
-if (is.na(DEFAULT_SERVER) | nchar(DEFAULT_SERVER) < 4 |
-    is.na(DEFAULT_DATABASE) | nchar(DEFAULT_DATABASE) < 4) {
-  stop("Default server and database must be set in dbplyr_helper_functions.R")
-}
-
-# library
-library(DBI)
-library(dplyr)
-library(dbplyr)
+# # connection details
+# DEFAULT_SERVER <- "[]"
+# DEFAULT_DATABASE <- "[]"
+# DEFAULT_PORT <- NA
+# # DO NOT RELEASE THESE VALUES
+# # DO NOT RELEASE THESE VALUES
+# 
+# # error if connection details are missing
+# if (is.na(DEFAULT_SERVER) | nchar(DEFAULT_SERVER) < 4 |
+#     is.na(DEFAULT_DATABASE) | nchar(DEFAULT_DATABASE) < 4) {
+#   stop("Default server and database must be set in dbplyr_helper_functions.R")
+# }
+# 
+# # library
+# library(DBI)
+# library(dplyr)
+# library(dbplyr)
 
 ## Create connection string -----------------------------------------------------------------------
 #'
