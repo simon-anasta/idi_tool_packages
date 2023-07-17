@@ -1,0 +1,10 @@
+Package: dbplyr.helpers
+Title: Simplify common dbplyr tasks for IDI and LBD analyses
+Version: 0.0.0.9000
+Authors@R: 
+    person("Simon", "Anastasiadis", , "simon.anastasiadis@gmail.com", role = c("aut", "cre"))
+Description: Simplify common tasks with dbplyr when undertaking analyses in the SNZ data lab using the IDI or LBD. This package is required for our other data lab tools. 
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
