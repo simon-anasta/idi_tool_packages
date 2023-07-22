@@ -2,12 +2,41 @@
 % Please edit documentation in R/dbplyr_helper_functions.R
 \name{create_clustered_index}
 \alias{create_clustered_index}
-\title{Note: at most a single clustered index can be added to each table.
-This operation is potentially expensive, so should be used only where needed.}
+\title{Description: dbplyr support functions for R development with SQL server}
 \usage{
 create_clustered_index(db_connection, db, schema, tbl_name, index_columns)
 }
 \description{
+Input: Connection details that must be manually set.
+}
+\details{
+Output: support functions for ease of using R to manipulate SQL tables.
+
+Author: Simon Anastasiadis
+
+Dependencies: odbc, DBI, dplyr, dbplyr packages, utility_functions.R
+
+Notes:
+\itemize{
+\item Connection details (line ~35) NOT FOR RELEASE!!
+\item Some functions (and tests) assume SQL Server environment
+due to differences in syntax between different implementations of SQL.
+\item Uses code folding by headers (Alt + O to collapse all)
+\item Example use included at end of file.
+}
+
+Issues:
+
+History (reverse order):
+2020-11-18 SA v2 for release
+2020-07-12 SA addition of collapse indicator column function
+2020-02-13 SA addition of pivot function
+2020-01-09 SA v1 split dbplyr support out from utility_functions.R
+#############################################################################
+
+Note: at most a single clustered index can be added to each table.
+This operation is potentially expensive, so should be used only where needed.
+
 For researcher created tables non-clustered indexes are recommended.
 This function only provided for backwards compatibility.
 }

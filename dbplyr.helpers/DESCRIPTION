@@ -14,4 +14,7 @@ Config/testthat/edition: 3
 Imports: 
     DBI,
     dbplyr,
-    dplyr
+    dplyr,
+    glue,
+    odbc,
+    rlang

@@ -188,8 +188,10 @@ has_internal_delimiters = function(string, delimiter) {
     delimiter = paste0(delimiter, "'")
   }
   
-  string = strsplit(string, "") %>% unlist(use.names = FALSE)
-  delimiter = strsplit(delimiter, "") %>% unlist(use.names = FALSE)
+  string = strsplit(string, "")
+  string = unlist(string, use.names = FALSE)
+  delimiter = strsplit(delimiter, "")
+  delimiter = unlist(delimiter, use.names = FALSE)
   
   return(any(string %in% delimiter))
 }
