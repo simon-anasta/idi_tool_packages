@@ -4,6 +4,7 @@
 #
 # Notes:
 # - Uses code folding by headers (Alt + O to collapse all)
+# - Designed for MS SQL Server will require editing for other SQL flavours
 #
 # Issues:
 #

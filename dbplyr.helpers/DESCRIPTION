@@ -16,5 +16,4 @@ Imports:
     dbplyr,
     dplyr,
     glue,
-    odbc,
     rlang

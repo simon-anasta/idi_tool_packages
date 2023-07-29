@@ -4,92 +4,52 @@
 #
 # Notes:
 # - Uses code folding by headers (Alt + O to collapse all)
+# - Designed for MS SQL Server will require editing for other SQL flavours
 #
 # Issues:
 #
 ################################################################################
 
-## Create connection string ----------------------------------------------- ----
-#'
-#' ODBC connections require a connection string to define the connection
-#' between the database and the access point. This string has a default
-#' format that this function satisfies.
-#'
-#' This function does not need to be called directly to use the utility
-#' functions. It is called by create_database_connection.
-#'
-
-#' Title
-#'
-#' @param server 
-#' @param database 
-#' @param port 
-#'
-#' @return the connection string to initiate a new database connection.
+## Print connection guidance ---------------------------------------------- ----
+#' Print user guidance on database connections
+#' 
+#' Connecting to a database can be a frustrating task the first time around.
+#' This is often a bespoke task that depends on the exact configuration of the
+#' database.
+#' 
+#' This function returns example code that we found useful when connecting to,
+#' and disconnecting from, a MS SQL Server. It is intended to serve as a guide
+#' for arranging this in your own work.
+#' 
+#' @return NULL
 #' 
 #' @export
-set_connection_string = function(server, database, port = NA) {
-  connstr = "DRIVER=ODBC Driver 17 for SQL Server; "
-  connstr = paste0(connstr, "Trusted_Connection=Yes; ")
-  connstr = paste0(connstr, "DATABASE=", database, "; ")
-  connstr = paste0(connstr, "SERVER=", server)
-  if (!is.na(port)) {
-    connstr = paste0(connstr, ", ", port)
-  }
-  return(connstr)
-}
-
-## Create database connection point --------------------------------------- ----
-#'
-#' Any arguments passed to the function need to be named.
-#' Default values are set at the top of this script.
-#'
-#' A single connection can access multiple associated databases.
-#' We recommend using a single connection to access all tables
-#' because attempts to join tables from different connections
-#' (even if they are in the same database) perform poorly if
-#' at all.
-#'
-
-#' Title
-#'
-#' @param ... 
-#' @param server 
-#' @param database 
-#' @param port 
-#'
-#' @return the database connection for use in all other functions
 #' 
-#' @export
-create_database_connection = function(..., server, database, port) {
-  # checks
-  if(length(list(...)) != 0){
-    stop("all database connection arguments must be named")
-  }
-  stopifnot(is.character(server))
-  stopifnot(is.character(database))
-  stopifnot(is.na(port) | is.character(port) | is.numeric(port))
+display_connection_guidance = function(){
   
-  server = remove_delimiters(server, "[]")
-  database = remove_delimiters(database, "[]")
+  msg = paste(
+    "## connect ------------------------------------",
+    "",
+    "# connection string",
+    "con_str = \"DRIVER=ODBC Driver 17 for SQL Server; Trusted_Connection=Yes; DATABASE={database}; SERVER={server},{port};\"",
+    "# create connection",
+    "db_conn = DBI::dbConnect(odbc::odbc(), .connection_string = con_str)",
+    "",
+    "## analysis -----------------------------------",
+    "",
+    "remote_tbl = create_access_point(db_conn, tbl_name = \"my_table\")",
+    "",
+    "",
+    "",
+    "## disconnect ---------------------------------",
+    "",
+    "DBI::dbDisconnect(db_conn)",
+    "",
+    sep = "\n"
+  )
   
-  # connect
-  connection_string = set_connection_string(server, database, port)
-  db_connection = DBI::dbConnect(odbc::odbc(), .connection_string = connection_string)
-}
-
-## Close an open database connection -------------------------------------- ----
-#' Close an open database connection
-#' 
-#' Good practice is to close open connections once they are finished with.
-#' Large numbers of open connections can degrade performance.
-#' 
-#' @param db_connection the open connection to close.
-#' Often created using `create_database_connection`.
-#' 
-#' @export
-close_database_connection = function(db_connection) {
-  DBI::dbDisconnect(db_connection)
+  cat(msg)
+  return(invisible(NULL))
 }
 
 ## Access remote SQL table ------------------------------------------------ ----

@@ -7,7 +7,7 @@
 table_contains_required_columns(tbl_to_check, required_columns, only = FALSE)
 }
 \arguments{
-\item{tbl_to_check}{}
+\item{tbl_to_check}{a data frame. Works with local and remote tables.}
 
 \item{required_columns}{an array of character containing the names of the
 required columns.}
