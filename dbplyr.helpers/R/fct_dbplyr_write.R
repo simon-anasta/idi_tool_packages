@@ -48,7 +48,7 @@
 #' ```
 #' 
 #' @export
-create_table = function(db_connection, db, schema, tbl_name, named_list_of_columns, OVERWRITE = FALSE) {
+create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named_list_of_columns, OVERWRITE = FALSE) {
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
@@ -62,31 +62,36 @@ create_table = function(db_connection, db, schema, tbl_name, named_list_of_colum
     delete_table(db_connection, db, schema, tbl_name)
   }
   
-  # setup queries
-  DBI::dbExecute(db_connection, as.character(dbplyr::build_sql(con = db_connection, "SET ANSI_NULLS ON")))
-  DBI::dbExecute(db_connection, as.character(dbplyr::build_sql(con = db_connection, "SET QUOTED_IDENTIFIER ON")))
-  DBI::dbExecute(db_connection, as.character(dbplyr::build_sql(con = db_connection, "SET ANSI_PADDING ON")))
+  # SQL Server setup queries
+  if(any(grepl("SQL Server", class(db_connection)))){
+    DBI::dbExecute(db_connection, as.character(dbplyr::build_sql(con = db_connection, "SET ANSI_NULLS ON")))
+    DBI::dbExecute(db_connection, as.character(dbplyr::build_sql(con = db_connection, "SET QUOTED_IDENTIFIER ON")))
+    DBI::dbExecute(db_connection, as.character(dbplyr::build_sql(con = db_connection, "SET ANSI_PADDING ON")))
+  }
+  
+  # new table
+  new_table = dplyr::case_when(
+    any(grepl("SQLite", class(db_connection))) ~ tbl_name,
+    any(grepl("SQL Server", class(db_connection))) ~ glue::glue("{db}.{schema}.{tbl_name}")
+  )
   
   # main SQL query
   sql_query = dbplyr::build_sql(
     con = db_connection,
-    "CREATE TABLE ",
-    dbplyr::sql(db), ".",
-    dbplyr::sql(schema), ".",
-    dbplyr::sql(tbl_name), "(", "\n",
+    "CREATE TABLE ", dbplyr::sql(new_table), "(", "\n",
     dbplyr::sql(paste0("[", names(named_list_of_columns), "] ",
                        named_list_of_columns, collapse = ",\n")), "\n",
-    ") ON [PRIMARY]"
+    ")"
   )
   
   # run query
   save_to_sql(sql_query, "create_table")
   result = DBI::dbExecute(db_connection, as.character(sql_query))
-  # post queries
-  DBI::dbExecute(
-    db_connection,
-    as.character(dbplyr::build_sql(con = db_connection, "SET ANSI_PADDING OFF"))
-  )
+  
+  # SQL Server post queries
+  if(any(grepl("SQL Server", class(db_connection)))){
+    DBI::dbExecute(db_connection, as.character(dbplyr::build_sql(con = db_connection, "SET ANSI_PADDING OFF")))
+  }
   return(result)
 }
 
@@ -123,7 +128,7 @@ create_table = function(db_connection, db, schema, tbl_name, named_list_of_colum
 #' appending a 5 character string like 'ABCDE' into a VARCHAR(3) column.
 #' 
 #' @export
-append_database_table = function(table_to_append, db_connection, db, schema, tbl_name, list_of_columns) {
+append_database_table = function(table_to_append, db_connection, db = "[]", schema = "[]", tbl_name, list_of_columns) {
   stopifnot("tbl_sql" %in% class(table_to_append))
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
@@ -145,8 +150,14 @@ append_database_table = function(table_to_append, db_connection, db, schema, tbl
     collapse = ", "
   )
   
+  # receiving table
+  receiving_table = dplyr::case_when(
+    any(grepl("SQLite", class(db_connection))) ~ tbl_name,
+    any(grepl("SQL Server", class(db_connection))) ~ glue::glue("{db}.{schema}.{tbl_name}")
+  )
+  
   query = glue::glue(
-    "INSERT INTO {db}.{schema}.{tbl_name} ({sql_list_of_columns})\n",
+    "INSERT INTO {receiving_table} ({sql_list_of_columns})\n",
     "{dbplyr::sql_render(table_to_append)}"
   )
   
@@ -189,7 +200,7 @@ append_database_table = function(table_to_append, db_connection, db, schema, tbl
 #' @return a connection to the new table (using `create_access_point`)
 #' 
 #' @export
-write_to_database = function(input_tbl, db_connection, db, schema, tbl_name, OVERWRITE = FALSE) {
+write_to_database = function(input_tbl, db_connection, db = "[]", schema = "[]", tbl_name, OVERWRITE = FALSE) {
   stopifnot("tbl_sql" %in% class(input_tbl))
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
@@ -207,12 +218,21 @@ write_to_database = function(input_tbl, db_connection, db, schema, tbl_name, OVE
   from_id = dbplyr::ident("subquery")
   
   # SQL query
-  sql_query = glue::glue(
-    "SELECT *\n",
-    "INTO {db}.{schema}.{tbl_name}\n",
-    "FROM (\n",
-    dbplyr::sql_render(input_tbl),
-    "\n) {from_id}"
+  sql_query = dplyr::case_when(
+    any(grepl("SQLite", class(db_connection))) ~ glue::glue(
+      "CREATE TABLE {tbl_name} AS \n",
+      "SELECT *\n",
+      "FROM (\n",
+      dbplyr::sql_render(input_tbl),
+      "\n) {from_id}"
+    ),
+    any(grepl("SQL Server", class(db_connection))) ~ glue::glue(
+      "SELECT *\n",
+      "INTO {db}.{schema}.{tbl_name}\n",
+      "FROM (\n",
+      dbplyr::sql_render(input_tbl),
+      "\n) {from_id}"
+    )
   )
   
   # run query
@@ -231,7 +251,7 @@ write_to_database = function(input_tbl, db_connection, db, schema, tbl_name, OVE
 #' 
 #' `write_for_reuse` has been designed for this purpose. It can be inserted
 #' into the middle of a sequence of piped dplyr commands to force a write to
-#' disk.
+#' disk. It only works for SQL Server.
 #' 
 #' Existing tables with the same name are automatically overwritten. For a more
 #' cautious approach, use `write_to_database` followed by
@@ -261,6 +281,8 @@ write_for_reuse = function(tbl_to_save, db_connection, db, schema, tbl_name, ind
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
   warn_if_missing_delimiters(db, schema, tbl_name)
+  connection_is_sql_server = any(grepl("SQL Server", class(db_connection)))
+  stopifnot(connection_is_sql_server)
   
   run_time_inform_user("writing temporary table", context = "all", print_off = print_off)
   saved_table = write_to_database(tbl_to_save, db_connection, db, schema, tbl_name, OVERWRITE = TRUE)
@@ -299,7 +321,7 @@ write_for_reuse = function(tbl_to_save, db_connection, db, schema, tbl_name, ind
 #' @return a connection to the new table (using `create_access_point`)
 #' 
 #' @export
-copy_r_to_sql = function(db_connection, db, schema, sql_table_name, r_table_name, OVERWRITE = FALSE) {
+copy_r_to_sql = function(db_connection, db = "[]", schema = "[]", sql_table_name, r_table_name, OVERWRITE = FALSE) {
   stopifnot(is.data.frame(r_table_name))
   stopifnot("tbl_sql" %not_in% class(r_table_name))
   stopifnot(is.character(db))
@@ -313,16 +335,35 @@ copy_r_to_sql = function(db_connection, db, schema, sql_table_name, r_table_name
     delete_table(db_connection, db, schema, sql_table_name)
   }
   
-  suppressMessages( # mutes translation message
-    DBI::dbWriteTable(
-      db_connection,
-      DBI::Id(
-        catalog = remove_delimiters(db, "[]"),
-        schema = remove_delimiters(schema, "[]"),
-        table = remove_delimiters(sql_table_name, "[]")
-      ),
-      r_table_name
+  # ID options
+  db_delim = remove_delimiters(db, "[]")
+  schema_delim = remove_delimiters(schema, "[]")
+  
+  if(nchar(db_delim) > 0 & nchar(schema_delim) > 0) {
+    this_ID = DBI::Id(
+      catalog = remove_delimiters(db, "[]"),
+      schema = remove_delimiters(schema, "[]"),
+      table = remove_delimiters(sql_table_name, "[]")
     )
+  } else if(nchar(db_delim) > 0 & nchar(schema_delim) == 0) {
+    this_ID = DBI::Id(
+      catalog = remove_delimiters(db, "[]"),
+      table = remove_delimiters(sql_table_name, "[]")
+    )
+  } else if(nchar(db_delim) == 0 & nchar(schema_delim) > 0) {
+    this_ID = DBI::Id(
+      schema = remove_delimiters(schema, "[]"),
+      table = remove_delimiters(sql_table_name, "[]")
+    )
+  } else {
+    this_ID = DBI::Id(
+      table = remove_delimiters(sql_table_name, "[]")
+    )
+  }
+  
+  # copy data
+  suppressMessages( # mutes translation message
+    DBI::dbWriteTable(db_connection, this_ID, r_table_name)
   )
   
   r_table_name = create_access_point(db_connection, db, schema, sql_table_name)
@@ -356,7 +397,7 @@ copy_r_to_sql = function(db_connection, db, schema, sql_table_name, r_table_name
 #' @return a connection to the new view (using `create_access_point`)
 #' 
 #' @export
-create_view = function(tbl_name, db_connection, db, schema, view_name, OVERWRITE = FALSE) {
+create_view = function(tbl_name, db_connection, db = "[]", schema = "[]", view_name, OVERWRITE = FALSE) {
   stopifnot("tbl_sql" %in% class(tbl_name))
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
@@ -367,9 +408,17 @@ create_view = function(tbl_name, db_connection, db, schema, view_name, OVERWRITE
   # remove view if it exists
   if (OVERWRITE) delete_table(db_connection, db, schema, view_name, mode = "view")
   
+  # location
+  if(any(grepl("SQLite", class(db_connection)))) {
+    view_delim = remove_delimiters(view_name, "[]")
+    new_view_name = glue::glue("{view_delim}")
+  } else {
+    new_view_name = glue::glue("{schema}.{view_name}")
+  }
+  
   # SQL query
   sql_query = glue::glue(
-    "CREATE VIEW {schema}.{view_name} AS\n",
+    "CREATE VIEW {new_view_name} AS\n",
     "{dbplyr::sql_render(tbl_name)}\n"
   )
   

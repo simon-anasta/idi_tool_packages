@@ -83,14 +83,18 @@ display_connection_guidance = function(){
 #' @return a remote data frame
 #' 
 #' @export
-create_access_point = function(db_connection, db = "", schema = "", tbl_name) {
+create_access_point = function(db_connection, db = "[]", schema = "[]", tbl_name) {
   warn_if_missing_delimiters(db, schema, tbl_name)
   stopifnot(table_or_view_exists_in_db(db_connection, db, schema, tbl_name))
+  
+  if(any(grepl("SQLite", class(db_connection)))) {
+    tbl_name = remove_delimiters(tbl_name, "[]")
+  }
   
   tryCatch(
     {
       # access table
-      if (nchar(schema) > 0 | nchar(db) > 0) {
+      if (nchar(schema) > 2 | nchar(db) > 2) {
         table_access = dplyr::tbl(db_connection, from = dbplyr::in_schema(db_schema(db, schema), tbl_name))
       } else {
         table_access = dplyr::tbl(db_connection, from = tbl_name)

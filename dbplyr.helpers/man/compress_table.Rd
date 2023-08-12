@@ -25,6 +25,9 @@ the result from executing the command using \code{DBI::dbExecute}
 (seldom used).
 }
 \description{
+Compacts an SQL Server table. Errors for non-SQL Server tables.
+}
+\details{
 Large SQL tables can be compressed to reduce the space they take up.
 We have observe this reduce storage space of tables by 50-75\% in many cases.
 }

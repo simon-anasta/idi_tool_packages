@@ -4,7 +4,7 @@
 \alias{delete_table}
 \title{Drop tables and views from SQL}
 \usage{
-delete_table(db_connection, db, schema, tbl_name, mode = "table")
+delete_table(db_connection, db = "[]", schema = "[]", tbl_name, mode = "table")
 }
 \arguments{
 \item{db_connection}{the open connection to close.

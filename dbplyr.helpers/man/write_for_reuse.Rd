@@ -46,7 +46,7 @@ of a remote database table back to disk before we resume manipulating it.
 \details{
 \code{write_for_reuse} has been designed for this purpose. It can be inserted
 into the middle of a sequence of piped dplyr commands to force a write to
-disk.
+disk. It only works for SQL Server.
 
 Existing tables with the same name are automatically overwritten. For a more
 cautious approach, use \code{write_to_database} followed by

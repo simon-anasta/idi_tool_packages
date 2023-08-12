@@ -4,7 +4,7 @@
 \alias{pivot_table}
 \title{Pivot wider}
 \usage{
-pivot_table(input_tbl, label_column, value_column, aggregator = "SUM")
+pivot_table(input_tbl, label_column, value_column, aggregator = "sum")
 }
 \arguments{
 \item{input_tbl}{a remote (database) table}

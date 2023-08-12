@@ -4,7 +4,7 @@
 \alias{table_or_view_exists_in_db}
 \title{Check Table or View exists in the database}
 \usage{
-table_or_view_exists_in_db(db_connection, db, schema, tbl_name)
+table_or_view_exists_in_db(db_connection, db = "[]", schema = "[]", tbl_name)
 }
 \arguments{
 \item{db_connection}{the open connection to close.

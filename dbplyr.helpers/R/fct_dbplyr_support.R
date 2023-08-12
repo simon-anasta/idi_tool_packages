@@ -39,7 +39,12 @@ db_schema = function(db, schema) {
   
   if(db == "" & schema != ""){
     warn_if_missing_delimiters("[db]", schema, "[table]")
-    return("{schema}")
+    return(glue::glue("{schema}"))
+  }
+  
+  if(db != "" & schema == ""){
+    warn_if_missing_delimiters(db, "[schema]", "[table]")
+    return(glue::glue("{db}"))
   }
   
   warn_if_missing_delimiters(db, schema, "[table]")
@@ -100,18 +105,32 @@ warn_if_missing_delimiters = function(db, schema, tbl_name) {
 #' @return T/F whether the Table or View exists
 #' 
 #' @export
-table_or_view_exists_in_db = function(db_connection, db, schema, tbl_name) {
+table_or_view_exists_in_db = function(db_connection, db = "[]", schema = "[]", tbl_name) {
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
   
   # check input
   warn_if_missing_delimiters(db, schema, tbl_name)
+  tbl_name_clean = remove_delimiters(tbl_name, "[]")
   
-  query = glue::glue(
+  # query structures
+  sqlite_query = glue::glue(
+    "SELECT EXISTS (\n",
+    "SELECT name FROM sqlite_master WHERE name='{tbl_name_clean}'\n",
+    ") AS ans"
+  )
+  
+  sqlserver_query = glue::glue(
     "IF OBJECT_ID('{db}.{schema}.{tbl_name}', 'U') IS NOT NULL\n",
     "OR OBJECT_ID('{db}.{schema}.{tbl_name}', 'V') IS NOT NULL\n",
     "SELECT 1 AS ans ELSE SELECT 0 AS ans"
+  )
+  
+  # query selection
+  query = dplyr::case_when(
+    any(grepl("SQLite", class(db_connection))) ~ sqlite_query,
+    any(grepl("SQL Server", class(db_connection))) ~ sqlserver_query
   )
   
   exists = DBI::dbGetQuery(db_connection, query)
@@ -183,7 +202,7 @@ save_to_sql = function(query, desc, path = getwd()) {
   stopifnot(is.character(path))
   
   # create directory if required
-  path = file.path(path, "SQL tm scripts")
+  path = file.path(path, "SQL tmp scripts")
   if (!dir.exists(path)) {
     dir.create(path)
   }

@@ -7,8 +7,8 @@
 write_to_database(
   input_tbl,
   db_connection,
-  db,
-  schema,
+  db = "[]",
+  schema = "[]",
   tbl_name,
   OVERWRITE = FALSE
 )

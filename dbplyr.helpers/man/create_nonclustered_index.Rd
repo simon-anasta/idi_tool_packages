@@ -28,10 +28,13 @@ the result from executing the command using \code{DBI::dbExecute}
 (seldom used).
 }
 \description{
-Create a non-clustered index to improve performance of joins.
-Unlike clustered indexes, multiple non-clustered indexes can be created.
+Adds non-clustered indexes to an SQL Server table. Errors for non-SQL Server
+tables.
 }
 \details{
+Create a non-clustered index to improve performance of joins.
+Unlike clustered indexes, multiple non-clustered indexes can be created.
+
 Clustered indexes tend to perform faster than non-clustered indexes.
 Permanent high reuse tables may benefit from clustered indexes. But as most
 researcher-created tables are used a limited number of times, they do not

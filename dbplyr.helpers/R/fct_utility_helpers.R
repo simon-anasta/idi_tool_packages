@@ -104,7 +104,7 @@ is_delimited = function(string, delimiter) {
   n_str = nchar(string)
   n_delim = nchar(delimiter)
   
-  string_longer_than_delimiters = n_str > n_delim
+  string_longer_than_delimiters = n_str >= n_delim
   first_char_delimited = substr(string, 1, 1) == substr(delimiter, 1, 1)
   last_char_delimited = substr(string, n_str, n_str) == substr(delimiter, n_delim, n_delim)
   

@@ -35,7 +35,7 @@
 #' (seldom used).
 #' 
 #' @export
-delete_table = function(db_connection, db, schema, tbl_name, mode = "table") {
+delete_table = function(db_connection, db = "[]", schema = "[]", tbl_name, mode = "table") {
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
@@ -48,23 +48,23 @@ delete_table = function(db_connection, db, schema, tbl_name, mode = "table") {
   if (mode == "table"){ code = "U"}
   if (mode == "view"){ code = "V"}
   
-  # remove database name if view mode
-  maybe_db_schema = db_schema(db, schema)
-  if (mode == "view") {
-    maybe_db_schema = schema
-  }
+  table_view_name = dplyr::case_when(
+    any(grepl("SQLite", class(db_connection))) ~ tbl_name,
+    any(grepl("SQL Server", class(db_connection))) && mode == "view" ~ glue::glue("{schema}.{tbl_name}"),
+    TRUE ~ glue::glue("{db}.{schema}.{tbl_name}")
+  )
   
   # remove table if it exists
-  removal_query = glue::glue(
-    "IF OBJECT_ID('{maybe_db_schema}.{tbl_name}', '{code}') IS NOT NULL\n",
-    "DROP {toupper(mode)} {maybe_db_schema}.{tbl_name};"
-  )
+  removal_query = glue::glue("DROP {toupper(mode)} IF EXISTS {table_view_name};")
   save_to_sql(removal_query, paste0("delete_", mode))
   result = DBI::dbExecute(db_connection, as.character(removal_query))
 }
 
 ## Add non-clustered index to a table ------------------------------------- ----
 #' Add non-clustered index
+#' 
+#' Adds non-clustered indexes to an SQL Server table. Errors for non-SQL Server
+#' tables.
 #' 
 #' Create a non-clustered index to improve performance of joins.
 #' Unlike clustered indexes, multiple non-clustered indexes can be created.
@@ -96,6 +96,8 @@ create_nonclustered_index = function(db_connection, db, schema, tbl_name, index_
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
   stopifnot(is.character(index_columns))
+  connection_is_sql_server = any(grepl("SQL Server", class(db_connection)))
+  stopifnot(connection_is_sql_server)
   
   warn_if_missing_delimiters(db, schema, tbl_name)
   # table in connection
@@ -116,6 +118,8 @@ create_nonclustered_index = function(db_connection, db, schema, tbl_name, index_
 
 ## Compress a table ------------------------------------------------------- ----
 #' Compress a table
+#' 
+#' Compacts an SQL Server table. Errors for non-SQL Server tables.
 #' 
 #' Large SQL tables can be compressed to reduce the space they take up.
 #' We have observe this reduce storage space of tables by 50-75% in many cases.
@@ -138,6 +142,8 @@ compress_table = function(db_connection, db, schema, tbl_name) {
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
+  connection_is_sql_server = any(grepl("SQL Server", class(db_connection)))
+  stopifnot(connection_is_sql_server)
   
   warn_if_missing_delimiters(db, schema, tbl_name)
   stopifnot(table_or_view_exists_in_db(db_connection, db, schema, tbl_name))
@@ -181,9 +187,13 @@ union_all = function(table_a, table_b, list_of_columns) {
   
   sql_query = dbplyr::build_sql(
     con = db_connection,
+    "SELECT * FROM (\n",
     dbplyr::sql_render(table_a),
+    ") AS sub_a\n",
     "\nUNION ALL\n",
-    dbplyr::sql_render(table_b)
+    "SELECT * FROM (\n",
+    dbplyr::sql_render(table_b),
+    ") AS sub_b",
   )
   return(dplyr::tbl(db_connection, dbplyr::sql(sql_query)))
 }
@@ -209,48 +219,37 @@ union_all = function(table_a, table_b, list_of_columns) {
 #' @return a remote (database) table that has been pivoted wider.
 #' 
 #' @export
-pivot_table = function(input_tbl, label_column, value_column, aggregator = "SUM") {
+pivot_table = function(input_tbl, label_column, value_column, aggregator = "sum") {
   # checks
   stopifnot("tbl_sql" %in% class(input_tbl))
   stopifnot(label_column %in% colnames(input_tbl))
   stopifnot(value_column %in% colnames(input_tbl))
+  stopifnot(length(label_column) == 1)
+  stopifnot(length(value_column) == 1)
   stopifnot(is.character(aggregator))
   no_special_characters(aggregator)
-  
-  # connection
-  db_connection = input_tbl$src$con
   
   # pivot components
   non_pivot_columns = colnames(input_tbl)
   non_pivot_columns = non_pivot_columns[non_pivot_columns %not_in% c(label_column, value_column)]
   
   pivot_columns = dplyr::select(input_tbl, dplyr::all_of(label_column))
-  pivot_columns = dplyr::filter(pivot_columns, !is.na(rlang::`!!`(rlang::sym(label_column))))
+  pivot_columns = dplyr::filter(pivot_columns, !is.na(!!rlang::sym(label_column)))
   pivot_columns = dplyr::distinct(pivot_columns)
   pivot_columns = dplyr::collect(pivot_columns)
   pivot_columns = unlist(pivot_columns, use.names = FALSE)
   pivot_columns = sort(pivot_columns)
   
-  # check no special characters in new column labels
-  # sapply(pivot_columns, no_special_characters)
+  # expression creation
+  expressions = glue::glue("{aggregator}(ifelse({label_column} == '{pivot_columns}', {value_column}, 0), na.rm = TRUE)")
+  expressions = as.list(rlang::parse_exprs(expressions))
+  names(expressions) = pivot_columns
   
-  # query components
-  non_pivot_columns = paste0("[", non_pivot_columns, "]", collapse = ", ")
-  pivot_columns = paste0("[", pivot_columns, "]", collapse = ", ")
-  value_column = add_delimiters(value_column, "[]")
+  output = dplyr::group_by(input_tbl, !!!rlang::syms(non_pivot_columns))
+  output = dplyr::summarise(output, !!!expressions)
+  output = dplyr::ungroup(output)
   
-  # build SQL pivot query
-  sql_query = glue::glue(
-    "SELECT {non_pivot_columns}, \n{pivot_columns}\n",
-    "FROM (\n",
-    "{dbplyr::sql_render(input_tbl)}\n",
-    ") pvt_subquery\n",
-    "PIVOT (\n",
-    "{aggregator}({value_column}) FOR {label_column} IN \n({pivot_columns})\n",
-    ") AS pvt_labelvalue"
-  )
-  
-  return(dplyr::tbl(db_connection, dbplyr::sql(sql_query)))
+  return(output)
 }
 
 ## collapse indicator columns --------------------------------------------- ----
@@ -304,19 +303,15 @@ collapse_indicator_columns = function(input_tbl, prefix, yes_values, label = pre
     return(input_tbl)
   }
   
+  # expression creation
   yes_text = paste0("c(", paste0(yes_values, collapse = ","), ")")
+  expressions = rlang::parse_exprs(glue::glue("`{colnames_match}` %in% {yes_text} ~ '{suffix_list}'"))
+  `:=` = rlang::`:=`
   
   # collapse
   output_tbl = dplyr::mutate(
     input_tbl,
-    rlang::`:=`(
-      rlang::`!!`(rlang::sym(label)),
-      dplyr::case_when(
-        rlang::`!!!`(rlang::parse_exprs(
-          glue::glue("`{colnames_match}` %in% {yes_text} ~ '{suffix_list}'")
-        ))
-      )
-    )
+    !!rlang::sym(label) := dplyr::case_when( !!!expressions )
   )
   
   output_tbl = dplyr::select(

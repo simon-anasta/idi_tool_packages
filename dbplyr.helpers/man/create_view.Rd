@@ -4,7 +4,14 @@
 \alias{create_view}
 \title{Create a View from an existing remote table}
 \usage{
-create_view(tbl_name, db_connection, db, schema, view_name, OVERWRITE = FALSE)
+create_view(
+  tbl_name,
+  db_connection,
+  db = "[]",
+  schema = "[]",
+  view_name,
+  OVERWRITE = FALSE
+)
 }
 \arguments{
 \item{tbl_name}{an existing remote table that defines/describes the new view}

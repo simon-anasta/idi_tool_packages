@@ -7,8 +7,8 @@
 append_database_table(
   table_to_append,
   db_connection,
-  db,
-  schema,
+  db = "[]",
+  schema = "[]",
   tbl_name,
   list_of_columns
 )

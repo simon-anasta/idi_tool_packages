@@ -4,7 +4,7 @@
 \alias{create_access_point}
 \title{Access remote table}
 \usage{
-create_access_point(db_connection, db = "", schema = "", tbl_name)
+create_access_point(db_connection, db = "[]", schema = "[]", tbl_name)
 }
 \arguments{
 \item{db_connection}{the open connection to close.

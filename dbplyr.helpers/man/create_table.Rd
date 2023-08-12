@@ -6,8 +6,8 @@
 \usage{
 create_table(
   db_connection,
-  db,
-  schema,
+  db = "[]",
+  schema = "[]",
   tbl_name,
   named_list_of_columns,
   OVERWRITE = FALSE

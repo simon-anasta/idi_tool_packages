@@ -6,8 +6,8 @@
 \usage{
 copy_r_to_sql(
   db_connection,
-  db,
-  schema,
+  db = "[]",
+  schema = "[]",
   sql_table_name,
   r_table_name,
   OVERWRITE = FALSE
