@@ -90,23 +90,6 @@ test_that("union all combines", {
 
 ## pivot_table(input_tbl, label_column, value_column, aggregator = "SUM") - ----
 
-# # setup
-# path = system.file("extdata", "testing", package = "dbplyr.helpers")
-# db_path = file.path(path, "testing_sqlite.db")
-# db_conn = DBI::dbConnect(RSQLite::SQLite(), db_path)
-# 
-# table_long_thin = data.frame(
-#   people = c("bob", "alice", "bob", "alice"),
-#   labels = c("age", "age", "height", "height"),
-#   values = c(10, 12, 150, 160),
-#   stringsAsFactors = FALSE
-# )
-# 
-# DBI::dbExecute(db_conn, "DROP TABLE IF EXISTS table_long_thin")
-# DBI::dbWriteTable(db_conn, "table_long_thin", table_long_thin)
-# 
-# DBI::dbDisconnect(db_conn)
-
 test_that("table pivoted", {
   
   # arrange
@@ -137,23 +120,6 @@ test_that("table pivoted", {
 })
 
 ## collapse_indicator_columns(input_tbl, prefix, yes_values, label = prefix) ----
-
-# # setup
-# path = system.file("extdata", "testing", package = "dbplyr.helpers")
-# db_path = file.path(path, "testing_sqlite.db")
-# db_conn = DBI::dbConnect(RSQLite::SQLite(), db_path)
-# 
-# table_w_indicators = data.frame(
-#   id = c(1, 2, 3),
-#   v_a = c(1, 0, 0),
-#   v_b = c(0, 2, 0),
-#   v_c = c(0, 1, 1)
-# )
-# 
-# DBI::dbExecute(db_conn, "DROP TABLE IF EXISTS table_w_indicators")
-# DBI::dbWriteTable(db_conn, "table_w_indicators", table_w_indicators)
-# 
-# DBI::dbDisconnect(db_conn)
 
 test_that("indicators collapsed for local data frames", {
   table_w_indicators = data.frame(
