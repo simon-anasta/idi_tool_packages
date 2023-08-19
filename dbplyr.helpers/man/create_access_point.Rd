@@ -8,7 +8,7 @@ create_access_point(db_connection, db = "[]", schema = "[]", tbl_name)
 }
 \arguments{
 \item{db_connection}{the open connection to close.
-Often created using \code{create_database_connection}.}
+Often created using \code{DBI::dbConnect}.}
 
 \item{db}{the name of the database. Can be different from the database used
 when creating \code{db_connection} but must be on the same server. Warns if not

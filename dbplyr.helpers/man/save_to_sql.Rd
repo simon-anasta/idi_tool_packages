@@ -4,7 +4,7 @@
 \alias{save_to_sql}
 \title{Save SQL queries to files}
 \usage{
-save_to_sql(query, desc, path = getwd())
+save_to_sql(query, desc, query_path)
 }
 \arguments{
 \item{query}{the text of the query to save. This may be generated using
@@ -12,9 +12,9 @@ save_to_sql(query, desc, path = getwd())
 
 \item{desc}{a description of the query. Use to name the file.}
 
-\item{path}{the path to save the query. Will always be in a sub-folder named
-"SQL tmp scripts" on this path. Creates the directory if required. Defaults
-to the current working directory.}
+\item{query_path}{The path to save the query. If provided will attempt to
+save a copy of the query to the provided folder. Skips of no path.
+Warns if unable to write. Creates directory if required.}
 }
 \value{
 The location and name of the saved file. If permissions do not exist

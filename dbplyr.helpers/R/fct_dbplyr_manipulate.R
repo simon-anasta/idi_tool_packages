@@ -30,12 +30,15 @@
 #' in square brackets.
 #' @param mode either "table" or "view". Determines whether a table or view is
 #' dropped.
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
 #'
 #' @return the result from executing the command using `DBI::dbExecute`
 #' (seldom used).
 #' 
 #' @export
-delete_table = function(db_connection, db = "[]", schema = "[]", tbl_name, mode = "table") {
+delete_table = function(db_connection, db = "[]", schema = "[]", tbl_name, mode = "table", query_path = NA) {
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
@@ -56,7 +59,7 @@ delete_table = function(db_connection, db = "[]", schema = "[]", tbl_name, mode 
   
   # remove table if it exists
   removal_query = glue::glue("DROP {toupper(mode)} IF EXISTS {table_view_name};")
-  save_to_sql(removal_query, paste0("delete_", mode))
+  save_to_sql(removal_query, paste0("delete_", mode), query_path)
   result = DBI::dbExecute(db_connection, as.character(removal_query))
 }
 
@@ -86,12 +89,15 @@ delete_table = function(db_connection, db = "[]", schema = "[]", tbl_name, mode 
 #' in square brackets.
 #' @param index_columns an array containing the names of columns for the
 #' index. Will error if columns are not found in table.
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
 #'
 #' @return the result from executing the command using `DBI::dbExecute`
 #' (seldom used).
 #' 
 #' @export
-create_nonclustered_index = function(db_connection, db, schema, tbl_name, index_columns) {
+create_nonclustered_index = function(db_connection, db, schema, tbl_name, index_columns, query_path = NA) {
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
@@ -112,7 +118,7 @@ create_nonclustered_index = function(db_connection, db, schema, tbl_name, index_
   
   query = glue::glue("CREATE NONCLUSTERED INDEX my_index_name ON {db}.{schema}.{tbl_name} ({index_columns})")
   
-  save_to_sql(query, "add_nonclustered_index")
+  save_to_sql(query, "add_nonclustered_index", query_path)
   result = DBI::dbExecute(db_connection, as.character(query))
 }
 
@@ -133,12 +139,15 @@ create_nonclustered_index = function(db_connection, db, schema, tbl_name, index_
 #' not delimited in square brackets.
 #' @param tbl_name the name of the Table or View in SQL. Warns is not delimited
 #' in square brackets.
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
 #'
 #' @return the result from executing the command using `DBI::dbExecute`
 #' (seldom used).
 #' 
 #' @export
-compress_table = function(db_connection, db, schema, tbl_name) {
+compress_table = function(db_connection, db, schema, tbl_name, query_path = NA) {
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
@@ -152,7 +161,7 @@ compress_table = function(db_connection, db, schema, tbl_name) {
   sql_query = glue::glue("ALTER TABLE {db}.{schema}.{tbl_name} REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = PAGE)")
   
   # run query
-  save_to_sql(sql_query, "compress_table")
+  save_to_sql(sql_query, "compress_table", query_path)
   result = DBI::dbExecute(db_connection, as.character(sql_query))
 }
 

@@ -188,24 +188,22 @@ table_contains_required_columns = function(tbl_to_check, required_columns, only 
 #' @param query the text of the query to save. This may be generated using
 #' `dbplyr::show_query` where required.
 #' @param desc a description of the query. Use to name the file.
-#' @param path the path to save the query. Will always be in a sub-folder named
-#' "SQL tmp scripts" on this path. Creates the directory if required. Defaults
-#' to the current working directory.
+#' @param query_path The path to save the query. If provided will attempt to
+#' save a copy of the query to the provided folder. Skips of no path.
+#' Warns if unable to write. Creates directory if required.
 #' 
 #' @return The location and name of the saved file. If permissions do not exist
 #' to save the file, the name and location of the attempted file.
 #' 
 #' @export
-save_to_sql = function(query, desc, path = getwd()) {
+save_to_sql = function(query, desc, query_path) {
   stopifnot(dbplyr::is.sql(query) | is.character(query))
   stopifnot(is.character(desc))
-  stopifnot(is.character(path))
-  
-  # create directory if required
-  path = file.path(path, "SQL tmp scripts")
-  if (!dir.exists(path)) {
-    dir.create(path)
+  # exit early
+  if(is.na(query_path)){
+    return(invisible())
   }
+  stopifnot(is.character(query_path))
   
   # tiny delay ensures no two files writes can have the same time-stamp
   Sys.sleep(0.1)
@@ -215,9 +213,25 @@ save_to_sql = function(query, desc, path = getwd()) {
   clean_name = gsub("[. :]", "_", desc)
   file_name = glue::glue("{clean_time} {clean_name}.sql")
   
-  try(
-    writeLines(as.character(query), file.path(path, file_name))
+  tryCatch(
+    # try to write file
+    {
+      # create directory if required
+      if (!dir.exists(query_path)) { dir.create(query_path) }
+      writeLines(as.character(query), file.path(query_path, file_name))
+      return(file.path(query_path, file_name))
+    },
+    # if error > display as warning
+    error = function(e){
+      msg = glue::glue("Error while saving query text:\n{e}")
+      warning(msg)
+    },
+    # if warning > display
+    warning = function(w){
+      msg = glue::glue("Waring while saving query text:\n{w}")
+      warning(msg)
+    }
   )
   
-  return(file.path(path, file_name))
+  return(invisible())
 }

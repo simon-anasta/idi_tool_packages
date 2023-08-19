@@ -11,7 +11,8 @@ write_for_reuse(
   schema,
   tbl_name,
   index_columns = NA,
-  print_off = TRUE
+  print_off = TRUE,
+  query_path = NA
 )
 }
 \arguments{
@@ -35,6 +36,10 @@ in square brackets.}
 to index by. Will error if columns are not found in table.}
 
 \item{print_off}{T/F should progress be printed to console. Defaults to TRUE.}
+
+\item{query_path}{If provided will attempt to save a copy of the SQL code
+sent to/executed on the database to the provided folder. Save occurs before
+execution, hence useful for debugging.}
 }
 \value{
 a connection to the new table (using \code{create_access_point})

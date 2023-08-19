@@ -4,7 +4,7 @@
 \alias{compress_table}
 \title{Compress a table}
 \usage{
-compress_table(db_connection, db, schema, tbl_name)
+compress_table(db_connection, db, schema, tbl_name, query_path = NA)
 }
 \arguments{
 \item{db_connection}{the open connection to close.
@@ -19,6 +19,10 @@ not delimited in square brackets.}
 
 \item{tbl_name}{the name of the Table or View in SQL. Warns is not delimited
 in square brackets.}
+
+\item{query_path}{If provided will attempt to save a copy of the SQL code
+sent to/executed on the database to the provided folder. Save occurs before
+execution, hence useful for debugging.}
 }
 \value{
 the result from executing the command using \code{DBI::dbExecute}

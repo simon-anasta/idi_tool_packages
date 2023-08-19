@@ -10,7 +10,8 @@ create_table(
   schema = "[]",
   tbl_name,
   named_list_of_columns,
-  OVERWRITE = FALSE
+  OVERWRITE = FALSE,
+  query_path = NA
 )
 }
 \arguments{
@@ -33,6 +34,10 @@ names and the contents are the column data types. See details below.}
 \item{OVERWRITE}{T/F should any existing table of the same name be deleted
 first? Defaults to FALSE, and will error if a table with the same name
 already exists.}
+
+\item{query_path}{If provided will attempt to save a copy of the SQL code
+sent to/executed on the database to the provided folder. Save occurs before
+execution, hence useful for debugging.}
 }
 \value{
 the result from executing the command using \code{DBI::dbExecute}

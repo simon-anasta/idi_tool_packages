@@ -66,7 +66,7 @@ display_connection_guidance = function(){
 #' same SQL Server can be accessed by the same connection.
 #' 
 #' @param db_connection the open connection to close.
-#' Often created using `create_database_connection`.
+#' Often created using `DBI::dbConnect`.
 #' @param db the name of the database. Can be different from the database used
 #' when creating `db_connection` but must be on the same server. Warns if not
 #' delimited in square brackets.

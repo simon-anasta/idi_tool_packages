@@ -10,7 +10,8 @@ append_database_table(
   db = "[]",
   schema = "[]",
   tbl_name,
-  list_of_columns
+  list_of_columns,
+  query_path = NA
 )
 }
 \arguments{
@@ -32,6 +33,10 @@ in square brackets.}
 
 \item{list_of_columns}{a list of columns found in both tables. Determine
 which columns from \code{table_to_append} are appended.}
+
+\item{query_path}{If provided will attempt to save a copy of the SQL code
+sent to/executed on the database to the provided folder. Save occurs before
+execution, hence useful for debugging.}
 }
 \value{
 the result from executing the command using \code{DBI::dbExecute}

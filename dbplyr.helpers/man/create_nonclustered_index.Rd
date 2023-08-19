@@ -4,7 +4,14 @@
 \alias{create_nonclustered_index}
 \title{Add non-clustered index}
 \usage{
-create_nonclustered_index(db_connection, db, schema, tbl_name, index_columns)
+create_nonclustered_index(
+  db_connection,
+  db,
+  schema,
+  tbl_name,
+  index_columns,
+  query_path = NA
+)
 }
 \arguments{
 \item{db_connection}{the open connection to close.
@@ -22,6 +29,10 @@ in square brackets.}
 
 \item{index_columns}{an array containing the names of columns for the
 index. Will error if columns are not found in table.}
+
+\item{query_path}{If provided will attempt to save a copy of the SQL code
+sent to/executed on the database to the provided folder. Save occurs before
+execution, hence useful for debugging.}
 }
 \value{
 the result from executing the command using \code{DBI::dbExecute}

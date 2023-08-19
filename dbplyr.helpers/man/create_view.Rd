@@ -10,7 +10,8 @@ create_view(
   db = "[]",
   schema = "[]",
   view_name,
-  OVERWRITE = FALSE
+  OVERWRITE = FALSE,
+  query_path = NA
 )
 }
 \arguments{
@@ -32,6 +33,10 @@ in square brackets.}
 \item{OVERWRITE}{T/F should any existing view of the same name be deleted
 first? Defaults to FALSE, and will error if a view with the same name already
 exists.}
+
+\item{query_path}{If provided will attempt to save a copy of the SQL code
+sent to/executed on the database to the provided folder. Save occurs before
+execution, hence useful for debugging.}
 }
 \value{
 a connection to the new view (using \code{create_access_point})

@@ -88,7 +88,7 @@ test_that("sql files written", {
   file_name = "test123456789"
   
   # act
-  save_to_sql("placeholder query", file_name, path = path)
+  save_to_sql("placeholder query", file_name, query_path = tmp_directory)
   
   folder_exists = dir.exists(tmp_directory)
   file_exists = any(grepl(file_name, list.files(tmp_directory)))
@@ -106,3 +106,31 @@ test_that("sql files written", {
   expect_false(folder_exists_to_start)
   expect_false(folder_exists_at_end)
 })
+
+test_that("sql files not written", {
+  
+  path = system.file("extdata", "testing", package = "dbplyr.helpers")
+  
+  # arrange
+  tmp_directory = file.path(path, "SQL tmp scripts")
+  folder_exists_to_start = dir.exists(tmp_directory)
+  file_name = "test123456789"
+  
+  # act
+  save_to_sql("placeholder query", file_name, query_path = NA)
+  
+  folder_exists = dir.exists(tmp_directory)
+  
+  # tidy
+  if(folder_exists){
+    unlink(tmp_directory, recursive = TRUE)
+  }
+  
+  folder_exists_at_end = dir.exists(tmp_directory)
+  
+  # assert
+  expect_false(folder_exists_to_start)
+  expect_false(folder_exists)
+  expect_false(folder_exists_at_end)
+})
+

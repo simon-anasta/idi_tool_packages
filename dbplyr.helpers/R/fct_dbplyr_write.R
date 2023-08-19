@@ -33,6 +33,9 @@
 #' @param OVERWRITE T/F should any existing table of the same name be deleted
 #' first? Defaults to FALSE, and will error if a table with the same name
 #' already exists.
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
 #' 
 #' @return the result from executing the command using `DBI::dbExecute`
 #' (seldom used).
@@ -48,7 +51,7 @@
 #' ```
 #' 
 #' @export
-create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named_list_of_columns, OVERWRITE = FALSE) {
+create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named_list_of_columns, OVERWRITE = FALSE, query_path = NA) {
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
   stopifnot(is.character(tbl_name))
@@ -59,7 +62,7 @@ create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named
   
   # remove table if it exists
   if (OVERWRITE){
-    delete_table(db_connection, db, schema, tbl_name)
+    delete_table(db_connection, db, schema, tbl_name, query_path)
   }
   
   # SQL Server setup queries
@@ -85,7 +88,7 @@ create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named
   )
   
   # run query
-  save_to_sql(sql_query, "create_table")
+  save_to_sql(sql_query, "create_table", query_path)
   result = DBI::dbExecute(db_connection, as.character(sql_query))
   
   # SQL Server post queries
@@ -119,7 +122,10 @@ create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named
 #' in square brackets.
 #' @param list_of_columns a list of columns found in both tables. Determine
 #' which columns from `table_to_append` are appended.
-#'
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
+#' 
 #' @return the result from executing the command using `DBI::dbExecute`
 #' (seldom used).
 #' 
@@ -128,7 +134,7 @@ create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named
 #' appending a 5 character string like 'ABCDE' into a VARCHAR(3) column.
 #' 
 #' @export
-append_database_table = function(table_to_append, db_connection, db = "[]", schema = "[]", tbl_name, list_of_columns) {
+append_database_table = function(table_to_append, db_connection, db = "[]", schema = "[]", tbl_name, list_of_columns, query_path = NA) {
   stopifnot("tbl_sql" %in% class(table_to_append))
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
@@ -162,7 +168,7 @@ append_database_table = function(table_to_append, db_connection, db = "[]", sche
   )
   
   # print(query)
-  save_to_sql(query, "append_table")
+  save_to_sql(query, "append_table", query_path)
   result = DBI::dbExecute(db_connection, as.character(query))
 }
 
@@ -196,11 +202,14 @@ append_database_table = function(table_to_append, db_connection, db = "[]", sche
 #' @param OVERWRITE T/F should any existing table of the same name be deleted
 #' first? Defaults to FALSE, and will error if a table with the same name
 #' already exists.
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
 #' 
 #' @return a connection to the new table (using `create_access_point`)
 #' 
 #' @export
-write_to_database = function(input_tbl, db_connection, db = "[]", schema = "[]", tbl_name, OVERWRITE = FALSE) {
+write_to_database = function(input_tbl, db_connection, db = "[]", schema = "[]", tbl_name, OVERWRITE = FALSE, query_path = NA) {
   stopifnot("tbl_sql" %in% class(input_tbl))
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
@@ -209,7 +218,7 @@ write_to_database = function(input_tbl, db_connection, db = "[]", schema = "[]",
   
   # remove table if it exists
   if (OVERWRITE){
-    delete_table(db_connection, db, schema, tbl_name)
+    delete_table(db_connection, db, schema, tbl_name, query_path)
   }
   
   # connection
@@ -236,7 +245,7 @@ write_to_database = function(input_tbl, db_connection, db = "[]", schema = "[]",
   )
   
   # run query
-  save_to_sql(sql_query, "write_to_database")
+  save_to_sql(sql_query, "write_to_database", query_path)
   result = DBI::dbExecute(db_connection, as.character(sql_query))
   
   # load and return new table
@@ -271,11 +280,14 @@ write_to_database = function(input_tbl, db_connection, db = "[]", schema = "[]",
 #' @param index_columns an optional array containing the names of columns for
 #' to index by. Will error if columns are not found in table.
 #' @param print_off T/F should progress be printed to console. Defaults to TRUE.
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
 #' 
 #' @return a connection to the new table (using `create_access_point`)
 #' 
 #' @export
-write_for_reuse = function(tbl_to_save, db_connection, db, schema, tbl_name, index_columns = NA, print_off = TRUE) {
+write_for_reuse = function(tbl_to_save, db_connection, db, schema, tbl_name, index_columns = NA, print_off = TRUE, query_path = NA) {
   stopifnot("tbl_sql" %in% class(tbl_to_save))
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
@@ -285,11 +297,11 @@ write_for_reuse = function(tbl_to_save, db_connection, db, schema, tbl_name, ind
   stopifnot(connection_is_sql_server)
   
   run_time_inform_user("writing temporary table", context = "all", print_off = print_off)
-  saved_table = write_to_database(tbl_to_save, db_connection, db, schema, tbl_name, OVERWRITE = TRUE)
+  saved_table = write_to_database(tbl_to_save, db_connection, db, schema, tbl_name, OVERWRITE = TRUE, query_path)
   run_time_inform_user("completed write", context = "all", print_off = print_off)
   
   if (length(index_columns) > 1 | !is.na(index_columns[1])) {
-    result = create_nonclustered_index(db_connection, db, schema, tbl_name, index_columns)
+    result = create_nonclustered_index(db_connection, db, schema, tbl_name, index_columns, query_path)
     run_time_inform_user("added index", context = "all", print_off = print_off)
   }
   
@@ -317,11 +329,14 @@ write_for_reuse = function(tbl_to_save, db_connection, db, schema, tbl_name, ind
 #' @param OVERWRITE T/F should any existing table of the same name be deleted
 #' first? Defaults to FALSE, and will error if a table with the same name
 #' already exists.
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
 #' 
 #' @return a connection to the new table (using `create_access_point`)
 #' 
 #' @export
-copy_r_to_sql = function(db_connection, db = "[]", schema = "[]", sql_table_name, r_table_name, OVERWRITE = FALSE) {
+copy_r_to_sql = function(db_connection, db = "[]", schema = "[]", sql_table_name, r_table_name, OVERWRITE = FALSE, query_path = NA) {
   stopifnot(is.data.frame(r_table_name))
   stopifnot("tbl_sql" %not_in% class(r_table_name))
   stopifnot(is.character(db))
@@ -332,7 +347,7 @@ copy_r_to_sql = function(db_connection, db = "[]", schema = "[]", sql_table_name
   
   # remove if overwrite
   if (OVERWRITE) {
-    delete_table(db_connection, db, schema, sql_table_name)
+    delete_table(db_connection, db, schema, sql_table_name, query_path)
   }
   
   # ID options
@@ -393,11 +408,14 @@ copy_r_to_sql = function(db_connection, db = "[]", schema = "[]", sql_table_name
 #' @param OVERWRITE T/F should any existing view of the same name be deleted
 #' first? Defaults to FALSE, and will error if a view with the same name already
 #' exists.
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
 #' 
 #' @return a connection to the new view (using `create_access_point`)
 #' 
 #' @export
-create_view = function(tbl_name, db_connection, db = "[]", schema = "[]", view_name, OVERWRITE = FALSE) {
+create_view = function(tbl_name, db_connection, db = "[]", schema = "[]", view_name, OVERWRITE = FALSE, query_path = NA) {
   stopifnot("tbl_sql" %in% class(tbl_name))
   stopifnot(is.character(db))
   stopifnot(is.character(schema))
@@ -406,7 +424,7 @@ create_view = function(tbl_name, db_connection, db = "[]", schema = "[]", view_n
   warn_if_missing_delimiters(db, schema, view_name)
   
   # remove view if it exists
-  if (OVERWRITE) delete_table(db_connection, db, schema, view_name, mode = "view")
+  if (OVERWRITE) delete_table(db_connection, db, schema, view_name, mode = "view", query_path)
   
   # location
   if(any(grepl("SQLite", class(db_connection)))) {
@@ -423,7 +441,7 @@ create_view = function(tbl_name, db_connection, db = "[]", schema = "[]", view_n
   )
   
   # run query
-  save_to_sql(sql_query, "create_view")
+  save_to_sql(sql_query, "create_view", query_path)
   result = DBI::dbExecute(db_connection, as.character(sql_query))
   
   # load and return new table
