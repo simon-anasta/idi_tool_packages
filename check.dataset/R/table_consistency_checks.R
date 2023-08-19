@@ -13,7 +13,7 @@
 #' - Uses code folding by headers (Alt + O to collapse all)
 #' - Many of the functions come in two variants:
 #'     check_* variants return TRUE/FALSE
-#'     asssert_* variants error on a FALSE, and are silent on TRUE
+#'     assert_* variants error on a FALSE, and are silent on TRUE
 #' - Functions intended for runtime checks for things we often assume (and should check)
 #' - Replicates some existing R functions, but these versions will work on remote tables
 #'   as well as local tables.
