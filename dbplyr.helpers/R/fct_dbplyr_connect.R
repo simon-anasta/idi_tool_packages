@@ -95,7 +95,7 @@ create_access_point = function(db_connection, db = "[]", schema = "[]", tbl_name
     {
       # access table
       if (nchar(schema) > 2 | nchar(db) > 2) {
-        table_access = dplyr::tbl(db_connection, from = dbplyr::in_schema(db_schema(db, schema), tbl_name))
+        table_access = dplyr::tbl(db_connection, from = dbplyr::in_schema(dbplyr::sql(db_schema(db, schema)), tbl_name))
       } else {
         table_access = dplyr::tbl(db_connection, from = tbl_name)
       }
