@@ -43,9 +43,18 @@ test_with_sql_server = function(
   warn_if_missing_delimiters(table_db, our_schema, "[]")
   warn_if_missing_delimiters(view_db, "[]", "[]")
   
+  testing_env = testthat::test_env()
+  
+  assign("connection_string", connection_string, envir = testing_env)
+  assign("table_db", table_db, envir = testing_env)
+  assign("view_db", view_db, envir = testing_env)
+  assign("our_schema", our_schema, envir = testing_env)
+  assign("query_path", getwd(), envir = testing_env)
+  
   # path
   path = system.file("extdata", "SQL_server_tests", package = "dbplyr.helpers")
   
   # test
-  testthat::test_dir(path)
+  testthat::test_dir(path, env = testing_env)
 }
+
