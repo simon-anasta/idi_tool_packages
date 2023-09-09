@@ -547,14 +547,15 @@ check_no_date_overlap = function(df, start_date, end_date, group_by_cols) {
   number_overlaps = dplyr::inner_join(
     df,
     df,
-    by = group_by_cols, suffix = c("_x", "_y")
+    by = group_by_cols, suffix = c("_x", "_y"),
+    relationship = "many-to-many"
   )
   number_overlaps = dplyr::select(
     number_overlaps,
-    .data$sd_tmp_x,
-    .data$sd_tmp_y,
-    .data$ed_tmp_x,
-    .data$ed_tmp_y
+    "sd_tmp_x",
+    "sd_tmp_y",
+    "ed_tmp_x",
+    "ed_tmp_y"
   )
   number_overlaps = dplyr::filter(
     number_overlaps,

@@ -1,6 +1,6 @@
 Package: check.dataset
 Title: Enable review of data.frames regardless of whether local or remote
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: 
     person("Simon", "Anastasiadis", , "simon.anastasiadis@gmail.com", role = c("aut", "cre"))
 Description: Enable review of data.frames in a way that is consistent for both local and remote (via database conection) tables. Includes both specific checks and generation of overview reports.

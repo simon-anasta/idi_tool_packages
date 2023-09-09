@@ -16,7 +16,7 @@ check_no_date_overlap(df, start_date, end_date, group_by_cols)
 \item{group_by_cols}{columns to group-by / search within.}
 }
 \value{
-T/F
+T/F whether every period does not overlap with any other.
 }
 \description{
 If two individuals have date periods that overlap with each other but neither individual
