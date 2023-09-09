@@ -494,7 +494,7 @@ assert_join_covered = function(df1, df2, join_col) {
 #' @param end_date the column containing end dates
 #' @param group_by_cols columns to group-by / search within.
 #' 
-#' @return T/F
+#' @return T/F whether every period does not overlap with any other.
 #' 
 #' @export
 #' 
