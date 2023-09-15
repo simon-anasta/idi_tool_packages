@@ -56,7 +56,7 @@ testthat::test_that("sql accepts creation and appending", {
   table1_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name1)
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, table_name2, mode = "table", query_path = query_path)
   table2_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name2)
-  dbplyr.helpers::close_database_connection(db_conn)
+  DBI::dbDisconnect(db_conn)
   
   # assert
   testthat::expect_true(table_created_in_sql)
@@ -76,11 +76,13 @@ testthat::test_that("new tables can be written", {
   
   # act - copy in
   db_conn = DBI::dbConnect(odbc::odbc(), .connection_string = connection_string)
-  copied_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, copied_table_name, cars, query_path = query_path)
+  initial_copied_table = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, copied_table_name)
+  copied_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, copied_table_name, cars, OVERWRITE = initial_copied_table, query_path = query_path)
   table_copied_to_sql = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, copied_table_name)
   
   # act - rewrite
-  written_table = dbplyr.helpers::write_to_database(copied_table, db_conn, table_db, our_schema, written_table_name, query_path = query_path)
+  initial_written_table = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, written_table_name)
+  written_table = dbplyr.helpers::write_to_database(copied_table, db_conn, table_db, our_schema, written_table_name, OVERWRITE = initial_written_table, query_path = query_path)
   table_written_to_sql = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, written_table_name)
   
   # act - delete & tidy up
@@ -88,9 +90,11 @@ testthat::test_that("new tables can be written", {
   copied_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, copied_table_name)
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, written_table_name, mode = "table", query_path = query_path)
   written_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, written_table_name)
-  dbplyr.helpers::close_database_connection(db_conn)
+  DBI::dbDisconnect(db_conn)
   
   # assert
+  testthat::expect_false(initial_copied_table)
+  testthat::expect_false(initial_written_table)
   testthat::expect_true(table_copied_to_sql)
   testthat::expect_true(table_written_to_sql)
   testthat::expect_true(copied_deleted_from_sql)
@@ -106,17 +110,26 @@ testthat::test_that("views can be created and deleted", {
   
   # act - view
   db_conn = DBI::dbConnect(odbc::odbc(), .connection_string = connection_string)
-  test_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, table_name, cars, query_path = query_path)
-  test_view = dbplyr.helpers::create_view(test_table, db_conn, view_db, our_schema, view_name, query_path = query_path)
+  
+  initial_table = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
+  test_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, table_name, cars, OVERWRITE = initial_table, query_path = query_path)
+  table_copied_to_sql = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, copied_table_name)
+  
+  initial_view = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, view_name)
+  test_view = dbplyr.helpers::create_view(test_table, db_conn, view_db, our_schema, view_name, OVERWRITE = initial_view, query_path = query_path)
   view_in_sql = dbplyr.helpers::table_or_view_exists_in_db(db_conn, view_db, our_schema, view_name)
   
   # act - removal
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, table_name, mode = "table", query_path = query_path)
+  table_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
   dbplyr.helpers::delete_table(db_conn, view_db, our_schema, view_name, mode = "view", query_path = query_path)
   view_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, view_db, our_schema, view_name)
-  dbplyr.helpers::close_database_connection(db_conn)
+  DBI::dbDisconnect(db_conn)
   
   # assert
+  testthat::expect_false(initial_table)
+  testthat::expect_false(initial_view)
   testthat::expect_true(view_in_sql)
+  testthat::expect_true(table_deleted_from_sql)
   testthat::expect_true(view_deleted_from_sql)
 })

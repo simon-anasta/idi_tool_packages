@@ -51,10 +51,14 @@ delete_table = function(db_connection, db = "[]", schema = "[]", tbl_name, mode 
   if (mode == "table"){ code = "U"}
   if (mode == "view"){ code = "V"}
   
+  # all outputs must be the same type (as.character) not (glue/character)
+  view_output = as.character(glue::glue("{schema}.{tbl_name}"))
+  full_output = as.character(glue::glue("{db}.{schema}.{tbl_name}"))
+  
   table_view_name = dplyr::case_when(
     any(grepl("SQLite", class(db_connection))) ~ tbl_name,
-    any(grepl("SQL Server", class(db_connection))) && mode == "view" ~ glue::glue("{schema}.{tbl_name}"),
-    TRUE ~ glue::glue("{db}.{schema}.{tbl_name}")
+    any(grepl("SQL Server", class(db_connection))) && mode == "view" ~ view_output,
+    TRUE ~ full_output
   )
   
   # remove table if it exists

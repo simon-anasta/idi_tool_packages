@@ -25,9 +25,15 @@ testthat::test_that("union row-binds", {
   
   # act - load and union
   db_conn = DBI::dbConnect(odbc::odbc(), .connection_string = connection_string)
+  initial_table1 = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, head_table_name)
+  initial_table2 = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, tail_table_name)
   
-  head_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, head_table_name, head_cars, query_path = query_path)
-  tail_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, tail_table_name, tail_cars, query_path = query_path)
+  head_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, head_table_name, head_cars, OVERWRITE = initial_table1, query_path = query_path)
+  tail_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, tail_table_name, tail_cars, OVERWRITE = initial_table2, query_path = query_path)
+  
+  table_written_to_sql1 = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, head_table_name)
+  table_written_to_sql2 = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, tail_table_name)
+  
   unioned_table = dbplyr.helpers::union_all(head_table, tail_table, colnames(cars))
   unioned_table = dplyr::collect(unioned_table)
   
@@ -36,10 +42,18 @@ testthat::test_that("union row-binds", {
   # act - delete & tidy up
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, head_table_name, mode = "table", query_path = query_path)
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, tail_table_name, mode = "table", query_path = query_path)
-  dbplyr.helpers::close_database_connection(db_conn)
+  table_deleted_from_sql1 = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, head_table_name)
+  table_deleted_from_sql2 = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, tail_table_name)
+  DBI::dbDisconnect(db_conn)
   
   # assert
+  testthat::expect_false(initial_table1)
+  testthat::expect_false(initial_table2)
+  testthat::expect_true(table_written_to_sql1)
+  testthat::expect_true(table_written_to_sql2)
   testthat::expect_true(dplyr::all_equal(unioned_table, rowbound_table, ignore_row_order = TRUE))
+  testthat::expect_true(table_deleted_from_sql1)
+  testthat::expect_true(table_deleted_from_sql2)
 })
 
 ## pivot ------------------------------------------------------------------ ----
@@ -63,7 +77,9 @@ testthat::test_that("pivot replicates tidyr::spread", {
   
   # act - load and pivot
   db_conn = DBI::dbConnect(odbc::odbc(), .connection_string = connection_string)
-  sql_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, table_name, in_data_table, query_path = query_path)
+  initial_table = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
+  sql_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, table_name, in_data_table, OVERWRITE = initial_table, query_path = query_path)
+  table_written_to_sql = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
   
   pivoted_table = dbplyr.helpers::pivot_table(sql_table, label_column = "labels", value_column = "values", aggregator = "SUM")
   pivoted_table = dplyr::collect(pivoted_table)
@@ -71,11 +87,16 @@ testthat::test_that("pivot replicates tidyr::spread", {
   spread_table = tidyr::spread(in_data_table, labels, values)
   
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, table_name, query_path = query_path)
-  dbplyr.helpers::close_database_connection(db_conn)
+  table_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
+  DBI::dbDisconnect(db_conn)
   
   # assert
   testthat::expect_true(dplyr::all_equal(pivoted_table, out_data_table, ignore_row_order = TRUE, ignore_col_order = TRUE))
   testthat::expect_true(dplyr::all_equal(pivoted_table, spread_table, ignore_row_order = TRUE, ignore_col_order = TRUE))
+  
+  testthat::expect_false(initial_table)
+  testthat::expect_true(table_written_to_sql)
+  testthat::expect_true(table_deleted_from_sql)
 })
 
 ## collapse indicators ---------------------------------------------------- ----
@@ -95,19 +116,26 @@ testthat::test_that("collapse indicator columns runs for remote data frames", {
   expected_output_tbl = data.frame(id = c(1, 2, 3), v = c("a", "b", "c"), stringsAsFactors = FALSE)
   
   # act
-  table_name = "[4217154]"
+  table_name = "[test4217154]"
   
   db_conn = DBI::dbConnect(odbc::odbc(), .connection_string = connection_string)
-  sql_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, table_name, input_tbl, query_path = query_path)
+  initial_table = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
+  sql_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, table_name, input_tbl, OVERWRITE = initial_table, query_path = query_path)
+  table_written_to_sql = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
   
   actual_output_tbl = dbplyr.helpers::collapse_indicator_columns(sql_table, prefix, yes_value, label)
   actual_output_tbl = dplyr::collect(actual_output_tbl)
   
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, table_name, query_path = query_path)
-  dbplyr.helpers::close_database_connection(db_conn)
+  table_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
+  DBI::dbDisconnect(db_conn)
   
   # assert
   testthat::expect_true(dplyr::all_equal(actual_output_tbl, expected_output_tbl, ignore_row_order = TRUE, ignore_col_order = TRUE))
+  
+  testthat::expect_false(initial_table)
+  testthat::expect_true(table_written_to_sql)
+  testthat::expect_true(table_deleted_from_sql)
 })
 
 testthat::test_that("collapse indicator columns runs for remote data frames with multiple yes values", {
@@ -128,14 +156,21 @@ testthat::test_that("collapse indicator columns runs for remote data frames with
   table_name = "[test4482518]"
   
   db_conn = DBI::dbConnect(odbc::odbc(), .connection_string = connection_string)
-  sql_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, table_name, input_tbl, query_path = query_path)
+  initial_table = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
+  sql_table = dbplyr.helpers::copy_r_to_sql(db_conn, table_db, our_schema, table_name, input_tbl, OVERWRITE = initial_table, query_path = query_path)
+  table_written_to_sql = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
   
   actual_output_tbl = dbplyr.helpers::collapse_indicator_columns(sql_table, prefix, yes_value, label)
   actual_output_tbl = dplyr::collect(actual_output_tbl)
   
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, table_name, query_path = query_path)
-  dbplyr.helpers::close_database_connection(db_conn)
+  table_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
+  DBI::dbDisconnect(db_conn)
   
   # assert
   testthat::expect_true(dplyr::all_equal(actual_output_tbl, expected_output_tbl, ignore_row_order = TRUE, ignore_col_order = TRUE))
+  
+  testthat::expect_false(initial_table)
+  testthat::expect_true(table_written_to_sql)
+  testthat::expect_true(table_deleted_from_sql)
 })
