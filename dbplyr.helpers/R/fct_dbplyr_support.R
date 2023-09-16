@@ -196,13 +196,13 @@ table_contains_required_columns = function(tbl_to_check, required_columns, only 
 #' to save the file, the name and location of the attempted file.
 #' 
 #' @export
-save_to_sql = function(query, desc, query_path) {
-  stopifnot(dbplyr::is.sql(query) | is.character(query))
-  stopifnot(is.character(desc))
+save_to_sql = function(query, desc, query_path = NA) {
   # exit early
   if(is.na(query_path)){
     return(invisible())
   }
+  stopifnot(dbplyr::is.sql(query) | is.character(query))
+  stopifnot(is.character(desc))
   stopifnot(is.character(query_path))
   
   # tiny delay ensures no two files writes can have the same time-stamp

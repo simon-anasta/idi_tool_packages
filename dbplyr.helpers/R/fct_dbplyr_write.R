@@ -74,7 +74,7 @@ create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named
   
   # new table
   new_table = dplyr::case_when(
-    any(grepl("SQLite", class(db_connection))) ~ tbl_name,
+    any(grepl("SQLite", class(db_connection))) ~ glue::glue("{tbl_name}"),
     any(grepl("SQL Server", class(db_connection))) ~ glue::glue("{db}.{schema}.{tbl_name}")
   )
   
@@ -158,7 +158,7 @@ append_database_table = function(table_to_append, db_connection, db = "[]", sche
   
   # receiving table
   receiving_table = dplyr::case_when(
-    any(grepl("SQLite", class(db_connection))) ~ tbl_name,
+    any(grepl("SQLite", class(db_connection))) ~ glue::glue("{tbl_name}"),
     any(grepl("SQL Server", class(db_connection))) ~ glue::glue("{db}.{schema}.{tbl_name}")
   )
   
@@ -177,7 +177,8 @@ append_database_table = function(table_to_append, db_connection, db = "[]", sche
 #' 
 #' In R it is straightforward, to load a csv file, undertake some manipulation
 #' and then save out a new csv file. However, when working with databases, this
-#' is not as common a pattern for analysis.
+#' is not as common a pattern for analysis. Still we need the option to save
+#' a specific table to the database.
 #' 
 #' Given a table from a database connection, writes to a new table using the
 #' SELECT ... INTO ... FROM ... pattern.

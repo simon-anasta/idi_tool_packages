@@ -49,7 +49,7 @@ test_with_sql_server = function(
   assign("table_db", table_db, envir = testing_env)
   assign("view_db", view_db, envir = testing_env)
   assign("our_schema", our_schema, envir = testing_env)
-  assign("query_path", getwd(), envir = testing_env)
+  assign("query_path", query_path, envir = testing_env)
   
   # path
   path = system.file("extdata", "SQL_server_tests", package = "dbplyr.helpers")
