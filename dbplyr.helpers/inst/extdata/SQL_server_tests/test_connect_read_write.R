@@ -42,7 +42,10 @@ testthat::test_that("dbplyr writes, reads, and deletes", {
   table_written_to_sql = dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
   
   local_table = dplyr::collect(dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, table_name))
-  origin_and_read_table_identical = dplyr::all_equal(cars, local_table, ignore_row_order = TRUE)
+  origin_and_read_table_identical = all.equal(
+    dplyr::arrange(cars, speed, dist),
+    dplyr::arrange(local_table, speed, dist)
+  )
   
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, table_name, mode = "table", query_path = query_path)
   table_deleted_from_sql = !dbplyr.helpers::table_or_view_exists_in_db(db_conn, table_db, our_schema, table_name)
