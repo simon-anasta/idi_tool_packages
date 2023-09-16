@@ -4,7 +4,7 @@
 \alias{save_to_sql}
 \title{Save SQL queries to files}
 \usage{
-save_to_sql(query, desc, query_path)
+save_to_sql(query, desc, query_path = NA)
 }
 \arguments{
 \item{query}{the text of the query to save. This may be generated using

@@ -45,7 +45,8 @@ a connection to the new table (using \code{create_access_point})
 \description{
 In R it is straightforward, to load a csv file, undertake some manipulation
 and then save out a new csv file. However, when working with databases, this
-is not as common a pattern for analysis.
+is not as common a pattern for analysis. Still we need the option to save
+a specific table to the database.
 }
 \details{
 Given a table from a database connection, writes to a new table using the
