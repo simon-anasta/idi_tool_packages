@@ -196,7 +196,7 @@ table_contains_required_columns = function(tbl_to_check, required_columns, only 
 #' to save the file, the name and location of the attempted file.
 #' 
 #' @export
-save_to_sql = function(query, desc, query_path = NA) {
+save_to_sql_script = function(query, desc, query_path = NA) {
   # exit early
   if(is.na(query_path)){
     return(invisible())

@@ -63,7 +63,7 @@ delete_table = function(db_connection, db = "[]", schema = "[]", tbl_name, mode 
   
   # remove table if it exists
   removal_query = glue::glue("DROP {toupper(mode)} IF EXISTS {table_view_name};")
-  save_to_sql(removal_query, paste0("delete_", mode), query_path)
+  save_to_sql_script(removal_query, paste0("delete_", mode), query_path)
   result = DBI::dbExecute(db_connection, as.character(removal_query))
 }
 
@@ -122,7 +122,7 @@ create_nonclustered_index = function(db_connection, db, schema, tbl_name, index_
   
   query = glue::glue("CREATE NONCLUSTERED INDEX my_index_name ON {db}.{schema}.{tbl_name} ({index_columns})")
   
-  save_to_sql(query, "add_nonclustered_index", query_path)
+  save_to_sql_script(query, "add_nonclustered_index", query_path)
   result = DBI::dbExecute(db_connection, as.character(query))
 }
 
@@ -165,7 +165,7 @@ compress_table = function(db_connection, db, schema, tbl_name, query_path = NA) 
   sql_query = glue::glue("ALTER TABLE {db}.{schema}.{tbl_name} REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = PAGE)")
   
   # run query
-  save_to_sql(sql_query, "compress_table", query_path)
+  save_to_sql_script(sql_query, "compress_table", query_path)
   result = DBI::dbExecute(db_connection, as.character(sql_query))
 }
 

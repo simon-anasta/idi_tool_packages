@@ -88,7 +88,7 @@ create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named
   )
   
   # run query
-  save_to_sql(sql_query, "create_table", query_path)
+  save_to_sql_script(sql_query, "create_table", query_path)
   result = DBI::dbExecute(db_connection, as.character(sql_query))
   
   # SQL Server post queries
@@ -168,7 +168,7 @@ append_database_table = function(table_to_append, db_connection, db = "[]", sche
   )
   
   # print(query)
-  save_to_sql(query, "append_table", query_path)
+  save_to_sql_script(query, "append_table", query_path)
   result = DBI::dbExecute(db_connection, as.character(query))
 }
 
@@ -246,7 +246,7 @@ write_to_database = function(input_tbl, db_connection, db = "[]", schema = "[]",
   )
   
   # run query
-  save_to_sql(sql_query, "write_to_database", query_path)
+  save_to_sql_script(sql_query, "write_to_database", query_path)
   result = DBI::dbExecute(db_connection, as.character(sql_query))
   
   # load and return new table
@@ -442,7 +442,7 @@ create_view = function(tbl_name, db_connection, db = "[]", schema = "[]", view_n
   )
   
   # run query
-  save_to_sql(sql_query, "create_view", query_path)
+  save_to_sql_script(sql_query, "create_view", query_path)
   result = DBI::dbExecute(db_connection, as.character(sql_query))
   
   # load and return new table

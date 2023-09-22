@@ -76,7 +76,7 @@ test_that("column names are checked", {
   expect_false(table_contains_required_columns(iris, c(cols, "asdasdasd")))
 })
 
-## save_to_sql(query, desc, path = getwd()) ------------------------------- ----
+## save_to_sql_script(query, desc, path = getwd()) ------------------------ ----
 
 test_that("sql files written", {
   
@@ -88,7 +88,7 @@ test_that("sql files written", {
   file_name = "test123456789"
   
   # act
-  save_to_sql("placeholder query", file_name, query_path = tmp_directory)
+  save_to_sql_script("placeholder query", file_name, query_path = tmp_directory)
   
   folder_exists = dir.exists(tmp_directory)
   file_exists = any(grepl(file_name, list.files(tmp_directory)))
@@ -117,7 +117,7 @@ test_that("sql files not written", {
   file_name = "test123456789"
   
   # act
-  save_to_sql("placeholder query", file_name, query_path = NA)
+  save_to_sql_script("placeholder query", file_name, query_path = NA)
   
   folder_exists = dir.exists(tmp_directory)
   
