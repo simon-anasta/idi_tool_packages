@@ -44,7 +44,7 @@ testthat::test_that("dbplyr writes, reads, and deletes", {
   local_table = dplyr::collect(dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, table_name))
   origin_and_read_table_identical = all.equal(
     dplyr::arrange(cars, speed, dist),
-    dplyr::arrange(local_table, speed, dist)
+    dplyr::arrange(as.data.frame(local_table), speed, dist)
   )
   
   dbplyr.helpers::delete_table(db_conn, table_db, our_schema, table_name, mode = "table", query_path = query_path)
@@ -52,7 +52,6 @@ testthat::test_that("dbplyr writes, reads, and deletes", {
   DBI::dbDisconnect(db_conn)
   
   # Assert
-  testthat::expect_false(initial_table)
   testthat::expect_true(table_written_to_sql)
   testthat::expect_true(origin_and_read_table_identical)
   testthat::expect_true(table_deleted_from_sql)

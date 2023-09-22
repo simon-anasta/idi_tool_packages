@@ -62,7 +62,7 @@ create_table = function(db_connection, db = "[]", schema = "[]", tbl_name, named
   
   # remove table if it exists
   if (OVERWRITE){
-    delete_table(db_connection, db, schema, tbl_name, query_path)
+    delete_table(db_connection, db, schema, tbl_name, query_path = query_path)
   }
   
   # SQL Server setup queries
@@ -348,7 +348,7 @@ copy_r_to_sql = function(db_connection, db = "[]", schema = "[]", sql_table_name
   
   # remove if overwrite
   if (OVERWRITE) {
-    delete_table(db_connection, db, schema, sql_table_name, query_path)
+    delete_table(db_connection, db, schema, sql_table_name, query_path = query_path)
   }
   
   # ID options

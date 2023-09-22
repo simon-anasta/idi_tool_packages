@@ -254,7 +254,15 @@ pivot_table = function(input_tbl, label_column, value_column, aggregator = "sum"
   pivot_columns = sort(pivot_columns)
   
   # expression creation
-  expressions = glue::glue("{aggregator}(ifelse({label_column} == '{pivot_columns}', {value_column}, 0), na.rm = TRUE)")
+  #
+  # extra handling of `na.rm = TRUE` required as:
+  # - without: WARNING "na always removed"
+  # - with: translation error
+  if(any(grepl("SQL Server", class(input_tbl)))){
+    expressions = glue::glue("{aggregator}(ifelse({label_column} == '{pivot_columns}', {value_column}, 0))")
+  } else {
+    expressions = glue::glue("{aggregator}(ifelse({label_column} == '{pivot_columns}', {value_column}, 0), na.rm = TRUE)")
+  }
   expressions = as.list(rlang::parse_exprs(expressions))
   names(expressions) = pivot_columns
   

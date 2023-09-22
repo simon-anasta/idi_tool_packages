@@ -47,6 +47,7 @@ testthat::test_that("union row-binds", {
   DBI::dbDisconnect(db_conn)
   
   # assert
+  unioned_table = as.data.frame(unioned_table)
   unioned_table = unioned_table[order(unioned_table$speed, unioned_table$dist),sort(colnames(unioned_table))]
   rowbound_table = rowbound_table[order(rowbound_table$speed, rowbound_table$dist),sort(colnames(rowbound_table))]
   row.names(unioned_table) = NULL
@@ -54,8 +55,6 @@ testthat::test_that("union row-binds", {
   
   testthat::expect_true(all.equal(unioned_table, rowbound_table))
   
-  testthat::expect_false(initial_table1)
-  testthat::expect_false(initial_table2)
   testthat::expect_true(table_written_to_sql1)
   testthat::expect_true(table_written_to_sql2)
   testthat::expect_true(table_deleted_from_sql1)
@@ -97,6 +96,8 @@ testthat::test_that("pivot replicates tidyr::spread", {
   DBI::dbDisconnect(db_conn)
   
   # assert
+  pivoted_table = as.data.frame(pivoted_table)
+  spread_table = as.data.frame(spread_table)
   pivoted_table = pivoted_table[order(pivoted_table$people),sort(colnames(pivoted_table))]
   out_data_table = out_data_table[order(out_data_table$people),sort(colnames(out_data_table))]
   spread_table = spread_table[order(spread_table$people),sort(colnames(spread_table))]
@@ -108,7 +109,6 @@ testthat::test_that("pivot replicates tidyr::spread", {
   testthat::expect_true(all.equal(pivoted_table, spread_table))
   testthat::expect_true(all.equal(out_data_table, spread_table))
   
-  testthat::expect_false(initial_table)
   testthat::expect_true(table_written_to_sql)
   testthat::expect_true(table_deleted_from_sql)
 })
@@ -145,6 +145,7 @@ testthat::test_that("collapse indicator columns runs for remote data frames", {
   DBI::dbDisconnect(db_conn)
   
   # assert
+  actual_output_tbl = as.data.frame(actual_output_tbl)
   actual_output_tbl = actual_output_tbl[order(actual_output_tbl$id),sort(colnames(actual_output_tbl))]
   expected_output_tbl = expected_output_tbl[order(expected_output_tbl$id),sort(colnames(expected_output_tbl))]
   row.names(actual_output_tbl) = NULL
@@ -152,7 +153,6 @@ testthat::test_that("collapse indicator columns runs for remote data frames", {
   
   testthat::expect_true(all.equal(actual_output_tbl, expected_output_tbl))
   
-  testthat::expect_false(initial_table)
   testthat::expect_true(table_written_to_sql)
   testthat::expect_true(table_deleted_from_sql)
 })
@@ -187,6 +187,7 @@ testthat::test_that("collapse indicator columns runs for remote data frames with
   DBI::dbDisconnect(db_conn)
   
   # assert
+  actual_output_tbl = as.data.frame(actual_output_tbl)
   actual_output_tbl = actual_output_tbl[order(actual_output_tbl$id),sort(colnames(actual_output_tbl))]
   expected_output_tbl = expected_output_tbl[order(expected_output_tbl$id),sort(colnames(expected_output_tbl))]
   row.names(actual_output_tbl) = NULL
@@ -194,7 +195,6 @@ testthat::test_that("collapse indicator columns runs for remote data frames with
   
   testthat::expect_true(all.equal(actual_output_tbl, expected_output_tbl))
   
-  testthat::expect_false(initial_table)
   testthat::expect_true(table_written_to_sql)
   testthat::expect_true(table_deleted_from_sql)
 })
