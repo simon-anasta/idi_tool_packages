@@ -22,7 +22,7 @@
 #' 
 #' @return T/F whether any check has been failed
 #' 
-validate_populaiton_control_table = function(population_table) {
+validate_population_control_table = function(population_table) {
   stopifnot(is.data.frame(population_table))
   
   # acceptable and default values
@@ -252,7 +252,7 @@ validate_database_tables = function(control_table, db_connection) {
     tmp_table = NA
     
     try(
-      tmp_table = create_access_point(db_connection, this_db, this_schema, this_table),
+      {tmp_table = create_access_point(db_connection, this_db, this_schema, this_table)},
       silent = TRUE
     )
     
