@@ -67,7 +67,7 @@ run_time_inform_user = function(msg, context = NA, print_off = FALSE) {
 #' Otherwise errors if (1) input is not a string, (2) input has length greater
 #' than 1, or (3) input string contains special characters.
 #' 
-#' Special characters are: `;:'(){}?"*` and space.
+#' Special characters are: `;'(){}?"*`.
 #' 
 no_special_characters = function(in_string) {
   stopifnot(is.character(in_string))
@@ -75,7 +75,7 @@ no_special_characters = function(in_string) {
   
   in_string = strsplit(in_string, "")[[1]]
   
-  SPECIAL_CHARACTERS = c(";", ":", "'", "(", ")", "{", "}", "?", "\"", "*", " ")
+  SPECIAL_CHARACTERS = c(";", "'", "(", ")", "{", "}", "?", "\"", "*")
   stopifnot(all(SPECIAL_CHARACTERS %not_in% in_string))
   
   return(NULL)
