@@ -1,0 +1,15 @@
+Database_name,Schema_name,Table_name,Identity_column,Measure_period_start_date,Measure_period_end_date,Label_measure,Value_measure,Measure_summarised_by,Proportional
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_accidents],[snz_uid],[accident_date],[accident_date],"""num_accidents""","""1""",COUNT,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_accidents],[snz_uid],[accident_date],[accident_date],"""num_causes""",[accident_cause],COUNT,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_accidents],[snz_uid],[accident_date],[accident_date],"""cause""",[accident_cause],HISTOGRAM,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_accidents],[snz_uid],[accident_date],[accident_date],[accident_cause],"""1""",COUNT,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_accidents],[snz_uid],[accident_date],[accident_date],"""any_accident""",[accident_cause],EXISTS,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_benefit_payment],[snz_uid],[benefit_start_date],[benefit_end_date],"""sum_benefit_all""",[payments],SUM,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_benefit_payment],[snz_uid],[benefit_start_date],[benefit_end_date],"""sum_benefit_within""",[payments],SUM,TRUE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_benefit_payment],[snz_uid],[benefit_start_date],[benefit_end_date],"""max_payment""",[payments],MAX,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_benefit_payment],[snz_uid],[benefit_start_date],[benefit_end_date],"""min_payment""",[payments],MIN,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_benefit_payment],[snz_uid],[benefit_start_date],[benefit_end_date],"""duration_all""","""1""",DURATION,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_benefit_payment],[snz_uid],[benefit_start_date],[benefit_end_date],"""duration_within""","""1""",DURATION,TRUE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_benefit_payment],[snz_uid],[benefit_start_date],[benefit_end_date],"""avg_payment""",[payments],MEAN,FALSE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_benefit_payment],[snz_uid],[benefit_start_date],[benefit_end_date],"""avg_payment_prop""",[payments],MEAN,TRUE
+[IDI_Sandpit],[DL-MAA20XX-YY],[tmp_benefit_payment],[snz_uid],[benefit_start_date],[benefit_end_date],"""dist_payments""",[payments],DISTINCT,FALSE
