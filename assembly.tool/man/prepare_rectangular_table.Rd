@@ -61,6 +61,9 @@ progress information during execution. Defaults to FALSE.}
 records to the existing long-thin table. Useful if undertaking assembly in
 multiple steps. Defaults to FALSE.}
 }
+\value{
+None, makes permanent changes to the database.
+}
 \description{
 Sub-function of \code{dataset_assembly_tool}. Checks the long-thin table and
 pivots to the rectangular, research-ready table.

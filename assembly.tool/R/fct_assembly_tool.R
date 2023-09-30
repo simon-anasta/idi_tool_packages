@@ -52,7 +52,7 @@
 #' records to the existing long-thin table. Useful if undertaking assembly in
 #' multiple steps. Defaults to FALSE.
 #' 
-#' @return NULL
+#' @return None, makes permanent changes to the database.
 #' 
 #' @export
 #' 
@@ -223,40 +223,9 @@ dataset_assembly_tool = function(
 #' and measure.
 #' 
 #' All inputs as per the master function.
+#' @inheritParams dataset_assembly_tool
 #'
-#' @param population_control_table Either the file path to the population and
-#' period control file (in a csv or Excel format) or a data.frame containing
-#' the contents of the control file.
-#' @param measures_control_table Either the file path to the measures
-#' control file (in a csv or Excel format) or a data.frame containing
-#' the contents of the control file.
-#' @param db_connection An open connection to the database that contains the
-#' input tables (as specified in the control files) and the output location.
-#' @param output_database The name of the database that the output should be
-#' saved to. You mist have write permissions to this location.
-#' Ideally delimited in square brackets.
-#' @param output_schema The name of the schema that the output should be saved
-#' to. Use a placeholder value if the database does not permit schemas. You
-#' must have write permissions to this location.
-#' Ideally delimited in square brackets.
-#' @param output_table_long The name of the long-thin table that the output
-#' should be saved into. Will be overwritten unless `control_append_long_thin`
-#' is set to TRUE. Ideally delimited in square brackets.
-#' @param output_table_rectangular The name of the rectangular, research-ready
-#' table that the output should be saved into. Will be overwritten if it already
-#' exists. Ideally delimited in square brackets.
-#' @param control_development_mode T/F should the tool be run in development
-#' mode. In development mode only the first 1000 records for each measure are
-#' assembled. This allows for more rapid testing of correctness.
-#' @param control_run_checks_only (Optional) T/F should the tool only validate
-#' the control files and not run any database processing. Defaults to FALSE.
-#' @param control_silence_progress (Optional) T/F should the tool avoid showing
-#' progress information during execution. Defaults to FALSE.
-#' @param control_append_long_thin (Optional) T/F should the tool append the new
-#' records to the existing long-thin table. Useful if undertaking assembly in
-#' multiple steps. Defaults to FALSE.
-#'
-#' @return NULL
+#' @return None, makes permanent changes to the database.
 #' 
 assemble_output_table = function(
     population_control_table,
@@ -416,40 +385,9 @@ assemble_output_table = function(
 #' pivots to the rectangular, research-ready table.
 #' 
 #' All inputs as per the master function.
-#' 
-#' @param population_control_table Either the file path to the population and
-#' period control file (in a csv or Excel format) or a data.frame containing
-#' the contents of the control file.
-#' @param measures_control_table Either the file path to the measures
-#' control file (in a csv or Excel format) or a data.frame containing
-#' the contents of the control file.
-#' @param db_connection An open connection to the database that contains the
-#' input tables (as specified in the control files) and the output location.
-#' @param output_database The name of the database that the output should be
-#' saved to. You mist have write permissions to this location.
-#' Ideally delimited in square brackets.
-#' @param output_schema The name of the schema that the output should be saved
-#' to. Use a placeholder value if the database does not permit schemas. You
-#' must have write permissions to this location.
-#' Ideally delimited in square brackets.
-#' @param output_table_long The name of the long-thin table that the output
-#' should be saved into. Will be overwritten unless `control_append_long_thin`
-#' is set to TRUE. Ideally delimited in square brackets.
-#' @param output_table_rectangular The name of the rectangular, research-ready
-#' table that the output should be saved into. Will be overwritten if it already
-#' exists. Ideally delimited in square brackets.
-#' @param control_development_mode T/F should the tool be run in development
-#' mode. In development mode only the first 1000 records for each measure are
-#' assembled. This allows for more rapid testing of correctness.
-#' @param control_run_checks_only (Optional) T/F should the tool only validate
-#' the control files and not run any database processing. Defaults to FALSE.
-#' @param control_silence_progress (Optional) T/F should the tool avoid showing
-#' progress information during execution. Defaults to FALSE.
-#' @param control_append_long_thin (Optional) T/F should the tool append the new
-#' records to the existing long-thin table. Useful if undertaking assembly in
-#' multiple steps. Defaults to FALSE.
-#' 
-#' @return NULL
+#' @inheritParams dataset_assembly_tool
+#'
+#' @return None, makes permanent changes to the database.
 #' 
 prepare_rectangular_table = function(
   population_control_table,
