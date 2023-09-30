@@ -246,13 +246,13 @@ validate_database_tables = function(control_table, db_connection) {
   for(row in 1:nrow(control_table)){
     
     # can connect to database
-    this_db = control_table[[ii, "database_name"]]
-    this_schema = control_table[[ii, "schema_name"]]
-    this_table = control_table[[ii, "table_name"]]
+    this_db = control_table[[row, "database_name"]]
+    this_schema = control_table[[row, "schema_name"]]
+    this_table = control_table[[row, "table_name"]]
     tmp_table = NA
     
     try(
-      {tmp_table = create_access_point(db_connection, this_db, this_schema, this_table)},
+      {tmp_table = dbplyr.helpers::create_access_point(db_connection, this_db, this_schema, this_table)},
       silent = TRUE
     )
     
@@ -271,7 +271,7 @@ validate_database_tables = function(control_table, db_connection) {
         next
       }
       
-      this_column = remove_delimiters(this_column, "[]")
+      this_column = dbplyr.helpers:::remove_delimiters(this_column, "[]")
       
       # column is in table
       if(! this_column %in% colnames(tmp_table)){
@@ -283,7 +283,7 @@ validate_database_tables = function(control_table, db_connection) {
       if(col != "value_measure"){
         next
       }
-      summary_type = control_table[[ii, "measure_summarised_by"]]
+      summary_type = control_table[[row, "measure_summarised_by"]]
       if(! toupper(summary_type) %in% c("MIN", "MAX", "SUM", "MEAN")){
         next
       }

@@ -6,6 +6,7 @@
 # - Uses code folding by headers (Alt + O to collapse all)
 #
 # Issues:
+# - Need to accept folder path as input so that scripts can be saved if required
 #
 ################################################################################
 
@@ -106,11 +107,11 @@ dataset_assembly_tool = function(
   measures_control_table[] = lapply(measures_control_table, as.character)
   
   # convert tbl to data.frame
-  if (is.tbl(population_control_table)) {
-    population_control_table = as.data.frame(population_control_table)
+  if (dplyr::is.tbl(population_control_table)) {
+    population_control_table = as.data.frame(population_control_table, stringsAsFactors = FALSE)
   }
-  if (is.tbl(measures_control_table)) {
-    measures_control_table = as.data.frame(measures_control_table)
+  if (dplyr::is.tbl(measures_control_table)) {
+    measures_control_table = as.data.frame(measures_control_table, stringsAsFactors = FALSE)
   }
   stopifnot(is.data.frame(population_control_table))
   stopifnot(is.data.frame(measures_control_table))
@@ -122,9 +123,9 @@ dataset_assembly_tool = function(
   
   checks1 = validate_population_control_table(population_control_table)
   dbplyr.helpers::run_time_inform_user("population and period table checked", "details", control_silence_progress)
-  checks2 = validate_measure_control_table_1(measure_table)
+  checks2 = validate_measure_control_table_1(measures_control_table)
   dbplyr.helpers::run_time_inform_user("measures and indicators (1 of 2) checked", "details", control_silence_progress)
-  checks3 = validate_measure_control_table_2(measure_table)
+  checks3 = validate_measure_control_table_2(measures_control_table)
   dbplyr.helpers::run_time_inform_user("measures and indicators (2 of 2) checked", "details", control_silence_progress)
   
   control_file_checks_all_pass = checks1 & checks2 & checks3
@@ -223,17 +224,37 @@ dataset_assembly_tool = function(
 #' 
 #' All inputs as per the master function.
 #'
-#' @param output_database 
-#' @param output_schema 
-#' @param population_control_table 
-#' @param measures_control_table 
-#' @param db_connection 
-#' @param output_table_long 
-#' @param output_table_rectangular 
-#' @param control_run_checks_only 
-#' @param control_silence_progress 
-#' @param control_append_long_thin 
-#' @param control_development_mode 
+#' @param population_control_table Either the file path to the population and
+#' period control file (in a csv or Excel format) or a data.frame containing
+#' the contents of the control file.
+#' @param measures_control_table Either the file path to the measures
+#' control file (in a csv or Excel format) or a data.frame containing
+#' the contents of the control file.
+#' @param db_connection An open connection to the database that contains the
+#' input tables (as specified in the control files) and the output location.
+#' @param output_database The name of the database that the output should be
+#' saved to. You mist have write permissions to this location.
+#' Ideally delimited in square brackets.
+#' @param output_schema The name of the schema that the output should be saved
+#' to. Use a placeholder value if the database does not permit schemas. You
+#' must have write permissions to this location.
+#' Ideally delimited in square brackets.
+#' @param output_table_long The name of the long-thin table that the output
+#' should be saved into. Will be overwritten unless `control_append_long_thin`
+#' is set to TRUE. Ideally delimited in square brackets.
+#' @param output_table_rectangular The name of the rectangular, research-ready
+#' table that the output should be saved into. Will be overwritten if it already
+#' exists. Ideally delimited in square brackets.
+#' @param control_development_mode T/F should the tool be run in development
+#' mode. In development mode only the first 1000 records for each measure are
+#' assembled. This allows for more rapid testing of correctness.
+#' @param control_run_checks_only (Optional) T/F should the tool only validate
+#' the control files and not run any database processing. Defaults to FALSE.
+#' @param control_silence_progress (Optional) T/F should the tool avoid showing
+#' progress information during execution. Defaults to FALSE.
+#' @param control_append_long_thin (Optional) T/F should the tool append the new
+#' records to the existing long-thin table. Useful if undertaking assembly in
+#' multiple steps. Defaults to FALSE.
 #'
 #' @return NULL
 #' 
@@ -270,7 +291,7 @@ assemble_output_table = function(
   )
   
   # create if does not exist
-  if (!table_or_view_exists_in_db(db_connection, output_database, output_schema, output_table_long)) {
+  if (!dbplyr.helpers::table_or_view_exists_in_db(db_connection, output_database, output_schema, output_table_long)) {
     dbplyr.helpers::run_time_inform_user("creating long-thin table", "all", control_silence_progress)
     dbplyr.helpers::create_table(db_connection, output_database, output_schema, output_table_long, output_columns, OVERWRITE = FALSE)
   }
@@ -345,18 +366,18 @@ assemble_output_table = function(
       )
 
       group_by_columns = c(p_identity_column, p_identity_label, p_start_date, p_end_date, p_period_label, calculation$group)
-      group_by_columns = group_by_columns[!dbplyr.helpers::is_delimited(group_by_columns, "'")]
+      group_by_columns = group_by_columns[!dbplyr.helpers:::is_delimited(group_by_columns, "'")]
       GROUP_BY = ifelse(length(group_by_columns) == 0, "", paste0("GROUP BY ", paste0(group_by_columns, collapse = ", ")))
 
       # prepare query
       sql_query = dbplyr::build_sql(
         con = db_connection,
-        sql(glue::glue(paste(query_text, collapse = "\n")))
+        dbplyr::sql(glue::glue(paste(query_text, collapse = "\n")))
       )
       table_to_append = dplyr::tbl(db_connection, dbplyr::sql(sql_query))
 
       # append & conclude
-      append_database_table(
+      dbplyr.helpers::append_database_table(
         table_to_append, 
         db_connection, 
         output_database, 
@@ -396,17 +417,37 @@ assemble_output_table = function(
 #' 
 #' All inputs as per the master function.
 #' 
-#' @param population_control_table 
-#' @param measures_control_table 
-#' @param db_connection 
-#' @param output_database 
-#' @param output_schema 
-#' @param output_table_long 
-#' @param output_table_rectangular 
-#' @param control_development_mode 
-#' @param control_run_checks_only 
-#' @param control_silence_progress 
-#' @param control_append_long_thin 
+#' @param population_control_table Either the file path to the population and
+#' period control file (in a csv or Excel format) or a data.frame containing
+#' the contents of the control file.
+#' @param measures_control_table Either the file path to the measures
+#' control file (in a csv or Excel format) or a data.frame containing
+#' the contents of the control file.
+#' @param db_connection An open connection to the database that contains the
+#' input tables (as specified in the control files) and the output location.
+#' @param output_database The name of the database that the output should be
+#' saved to. You mist have write permissions to this location.
+#' Ideally delimited in square brackets.
+#' @param output_schema The name of the schema that the output should be saved
+#' to. Use a placeholder value if the database does not permit schemas. You
+#' must have write permissions to this location.
+#' Ideally delimited in square brackets.
+#' @param output_table_long The name of the long-thin table that the output
+#' should be saved into. Will be overwritten unless `control_append_long_thin`
+#' is set to TRUE. Ideally delimited in square brackets.
+#' @param output_table_rectangular The name of the rectangular, research-ready
+#' table that the output should be saved into. Will be overwritten if it already
+#' exists. Ideally delimited in square brackets.
+#' @param control_development_mode T/F should the tool be run in development
+#' mode. In development mode only the first 1000 records for each measure are
+#' assembled. This allows for more rapid testing of correctness.
+#' @param control_run_checks_only (Optional) T/F should the tool only validate
+#' the control files and not run any database processing. Defaults to FALSE.
+#' @param control_silence_progress (Optional) T/F should the tool avoid showing
+#' progress information during execution. Defaults to FALSE.
+#' @param control_append_long_thin (Optional) T/F should the tool append the new
+#' records to the existing long-thin table. Useful if undertaking assembly in
+#' multiple steps. Defaults to FALSE.
 #' 
 #' @return NULL
 #' 
