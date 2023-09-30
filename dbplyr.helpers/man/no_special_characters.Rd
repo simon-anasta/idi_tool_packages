@@ -13,7 +13,7 @@ No return. Silent pass if input is string and contains no special characters.
 Otherwise errors if (1) input is not a string, (2) input has length greater
 than 1, or (3) input string contains special characters.
 
-Special characters are: \verb{;:'()\{\}?"*} and space.}
+Special characters are: \verb{;'()\{\}?"*}.}
 }
 \description{
 Check input string for absence of special characters

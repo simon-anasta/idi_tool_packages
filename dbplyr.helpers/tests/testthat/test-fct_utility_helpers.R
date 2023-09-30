@@ -52,8 +52,8 @@ test_that("different calls work", {
 
 test_that("special characters rejected", {
   expect_error(no_special_characters("foo (bar)"), "SPECIAL_CHARACTERS")
-  expect_error(no_special_characters("foo bar"), "SPECIAL_CHARACTERS")
-  expect_error(no_special_characters("foo:bar"), "SPECIAL_CHARACTERS")
+  expect_error(no_special_characters("foo'bar"), "SPECIAL_CHARACTERS")
+  expect_error(no_special_characters("foo;bar"), "SPECIAL_CHARACTERS")
 })
 
 test_that("no special characters passed", {
