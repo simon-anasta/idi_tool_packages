@@ -6,7 +6,7 @@
 # are provided as csv files.
 ################################################################################
 
-## user setup ------------------------------------------------------------------
+## user config -----------------------------------------------------------------
 
 # working directory
 working_dir = "~/Path/To/Folder/Containing/Control/Files"
@@ -23,7 +23,7 @@ OUTPUT_RECTANGULAR_TABLE = "[demo_rectangular]"
 
 # controls
 RUN_CHECKS_ONLY = FALSE # {TRUE for testing inputs without assembly}
-DEVELOPMENT_MODE = TRUE # {TRUE for testing, FALSE for production}
+DEVELOPMENT_MODE = TRUE # {TRUE for test run, FALSE for production}
 
 ## setup -----------------------------------------------------------------------
 
@@ -33,12 +33,25 @@ library(assembly.tool)
 ## database connection - SQLite ------------------------------------------------
 # ignores schema during processing
 
-
+db_path = file.path("database_path", "sqlite_database_name.db")
+db_connection = DBI::dbConnect(RSQLite::SQLite(), db_path)
 
 ## database connection - SQL Server --------------------------------------------
 # demonstration only for ease of reference
 
+# approach 1
+con_str = "DRIVER=ODBC Driver 17 for SQL Server; Trusted_Connection=Yes; SERVER={server},{port}; DATABASE={database};"
+db_connection = DBI::dbConnect(odbc::odbc(), .connection_string = con_str)
 
+# approach 2
+db_connection = DBI::dbConnect(
+  odbc::odbc(),
+  driver = "ODBC Driver 18 for SQL Server",
+  Trusted_Connection = "Yes",
+  TrustServerCertificate = "Yes",
+  server = "{server}",
+ database = "{database}"
+)
 
 ## run assembly ----------------------------------------------------------------
 
@@ -53,3 +66,7 @@ dataset_assembly_tool(
     control_development_mode = DEVELOPMENT_MODE,
     control_run_checks_only = RUN_CHECKS_ONLY
 )
+
+## conclude --------------------------------------------------------------------
+
+DBI::dbDisconnect(db_connection)
