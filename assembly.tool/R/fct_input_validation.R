@@ -127,6 +127,11 @@ validate_control_table = function(control_table, type, column_reqs) {
       txt_delim = dbplyr.helpers:::is_delimited(this_value, "\"")
       sql_pass = not_na && accepts_sql && sql_delim
       txt_pass = not_na && accepts_txt && txt_delim
+      delim = dplyr::case_when(
+        sql_pass ~ "[]",
+        txt_pass ~ "\"",
+        TRUE ~ "\"[]"
+      )
       
       ## non-missing entries
       if (!not_na) {
@@ -141,10 +146,9 @@ validate_control_table = function(control_table, type, column_reqs) {
           "unaccepted input in {type} control: column {col}, row {row}",
           " - acceptable values are {acceptable_values}"
         ))
-      }
-      
-      ## no internal delimiters
-      if(dbplyr.helpers:::has_internal_delimiters(this_value)){
+        
+        ## no internal delimiters
+      } else if (dbplyr.helpers:::has_internal_delimiters(this_value, delim)){
         any_check_failed = TRUE
         warning(glue::glue(
           "unaccepted input in {type} control: column {col}, row {row}",
@@ -243,6 +247,10 @@ validate_database_tables = function(control_table, db_connection) {
   col_names = colnames(control_table)
   col_names = col_names[!col_names %in% c("database_name", "schema_name", "table_name")]
   
+  # is sql server
+  connection_is_sql_server = any(grepl("SQL Server", class(db_connection)))
+  
+  
   for(row in 1:nrow(control_table)){
     
     # can connect to database
@@ -256,7 +264,7 @@ validate_database_tables = function(control_table, db_connection) {
       silent = TRUE
     )
     
-    if(is.na(tmp_table)){
+    if(!dplyr::is.tbl(tmp_table)){
       any_check_failed = TRUE
       warning(glue::glue("table {this_db}.{this_schema}.{this_table} could not be accessed"))
       next # row
@@ -297,9 +305,9 @@ validate_database_tables = function(control_table, db_connection) {
         any_check_failed = TRUE
         warning(glue::glue("Can not {summary_type} column {this_column} of table {this_table} as it is not numeric"))
       }
-    
+      
     } # end column iteration
   } # end row iteration
-
+  
   return(any_check_failed)
 }

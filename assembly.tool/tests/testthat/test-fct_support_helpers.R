@@ -19,7 +19,7 @@ test_that("all (delimiated) file formats read", {
     stringsAsFactors = FALSE
   )
   
-  path = system.file("extdata", "testing", package = "assembly.tool")
+  path = system.file("extdata", "testing_file_read", package = "assembly.tool")
   
   csv_read = read_table_file(file.path(path, "read_table_test.csv"))
   xls_read = read_table_file(file.path(path, "read_table_test.xls"))
