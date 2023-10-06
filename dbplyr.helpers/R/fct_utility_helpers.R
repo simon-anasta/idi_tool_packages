@@ -37,7 +37,7 @@ run_time_inform_user = function(msg, context = NA, print_off = FALSE) {
     TRUE ~ msg
   )
   
-  now = as.character(Sys.time())
+  now = substr(as.character(Sys.time()), 1, 19)
   # display
   cat(now, "|", msg, "\n")
 }
