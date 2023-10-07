@@ -2,3 +2,4 @@
 
 export(dataset_assembly_tool)
 export(provide_assembly_tool_example)
+export(test_with_sql_server)

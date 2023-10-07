@@ -15,7 +15,8 @@ assemble_output_table(
   control_development_mode,
   control_run_checks_only = FALSE,
   control_silence_progress = FALSE,
-  control_append_long_thin = FALSE
+  control_append_long_thin = FALSE,
+  query_path = NA
 )
 }
 \arguments{
@@ -31,11 +32,12 @@ the contents of the control file.}
 input tables (as specified in the control files) and the output location.}
 
 \item{output_database}{The name of the database that the output should be
-saved to. You mist have write permissions to this location.
-Ideally delimited in square brackets.}
+saved to. You must have write permissions to this location.
+Ideally delimited in square brackets.
+Use \code{"[]"} if no database name required.}
 
 \item{output_schema}{The name of the schema that the output should be saved
-to. Use a placeholder value if the database does not permit schemas. You
+to. Use \code{"[]"} if the database does not permit schemas. You
 must have write permissions to this location.
 Ideally delimited in square brackets.}
 
@@ -60,6 +62,10 @@ progress information during execution. Defaults to FALSE.}
 \item{control_append_long_thin}{(Optional) T/F should the tool append the new
 records to the existing long-thin table. Useful if undertaking assembly in
 multiple steps. Defaults to FALSE.}
+
+\item{query_path}{If provided will attempt to save a copy of the SQL code
+sent to/executed on the database to the provided folder. Save occurs before
+execution, hence useful for debugging.}
 }
 \value{
 None, makes permanent changes to the database.

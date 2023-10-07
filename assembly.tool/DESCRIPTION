@@ -1,6 +1,6 @@
 Package: assembly.tool
 Title: Assembly Multiple Separate Data Sources To A Single Rectangular Table
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: 
     person("Simon", "Anastasiadis", , "simon.anastasiadis@gmail.com", role = c("aut", "cre"))
 Description: Analysis and research are easiest to undertake when starting from a single rectangular table. This assembly tool provides an effective way to create a single rectangular table from multiple separate data sources. It runs from a pair of control files, that specify the population to assembly an the measures for the population. It has been designed for use in the IDI where the data wrangling to combine data sources is a significant component of any analytic project.
@@ -9,6 +9,8 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Suggests: 
+    DBI,
+    RSQLite,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Imports: 

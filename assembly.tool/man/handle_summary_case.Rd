@@ -12,7 +12,8 @@ handle_summary_case(
   m_start_date,
   m_end_date,
   p_start_date,
-  p_end_date
+  p_end_date,
+  sqlite = FALSE
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ scaled down proportionately.}
 \item{p_start_date}{the start date for the study period}
 
 \item{p_end_date}{the end date for the study period}
+
+\item{sqlite}{T/F is the connection SQLite (different handling is required
+as sqlite does not have CONCAT or DATE-type)}
 }
 \value{
 a list containing three arguments: label, value, and group.
