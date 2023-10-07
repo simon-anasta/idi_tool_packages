@@ -13,7 +13,7 @@
 #
 ################################################################################
 
-## setup in common ------------------------------------------------------ ----
+## setup in common -------------------------------------------------------- ----
 
 path = system.file("extdata", "testing_control_validation", package = "assembly.tool")
 
@@ -163,7 +163,7 @@ test_that("incorrect terms warn", {
   expect_true(suppressWarnings(validate_measure_control_table_2(tmp)))
 })
 
-## validate_database_tables(control_table, db_connection) --------------- ----
+## validate_database_tables(control_table, db_connection) ----------------- ----
 
 test_that("correct control files pass", {
   tmp = control_population

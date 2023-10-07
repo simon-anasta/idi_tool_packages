@@ -22,9 +22,9 @@ data_accidents = read.csv(file.path(path, "data_accidents.csv"), stringsAsFactor
 data_benefit_payment = read.csv(file.path(path, "data_benefit_payment.csv"), stringsAsFactors = FALSE)
 data_project_population = read.csv(file.path(path, "data_project_population.csv"), stringsAsFactors = FALSE)
 
-dbplyr.helpers::copy_r_to_sql(db_conn, sql_table_name = "[tmp_accidents]", r_table_name = data_accidents)
-dbplyr.helpers::copy_r_to_sql(db_conn, sql_table_name = "[tmp_benefit_payment]", r_table_name = data_benefit_payment)
-dbplyr.helpers::copy_r_to_sql(db_conn, sql_table_name = "[tmp_project_population]", r_table_name = data_project_population)
+dbplyr.helpers::copy_r_to_sql(db_conn, sql_table_name = "[tmp_accidents]", r_table_name = data_accidents, OVERWRITE = TRUE)
+dbplyr.helpers::copy_r_to_sql(db_conn, sql_table_name = "[tmp_benefit_payment]", r_table_name = data_benefit_payment, OVERWRITE = TRUE)
+dbplyr.helpers::copy_r_to_sql(db_conn, sql_table_name = "[tmp_project_population]", r_table_name = data_project_population, OVERWRITE = TRUE)
 
 ## conclude --------------------------------------------------------------- ----
 
