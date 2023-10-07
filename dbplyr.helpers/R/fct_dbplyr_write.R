@@ -210,6 +210,7 @@ append_database_table = function(table_to_append, db_connection, db = "[]", sche
 #' @return a connection to the new table (using `create_access_point`)
 #' 
 #' @export
+
 write_to_database = function(input_tbl, db_connection, db = "[]", schema = "[]", tbl_name, OVERWRITE = FALSE, query_path = NA) {
   stopifnot("tbl_sql" %in% class(input_tbl))
   stopifnot(is.character(db))
@@ -219,7 +220,7 @@ write_to_database = function(input_tbl, db_connection, db = "[]", schema = "[]",
   
   # remove table if it exists
   if (OVERWRITE){
-    delete_table(db_connection, db, schema, tbl_name, query_path)
+    delete_table(db_connection, db, schema, tbl_name, query_path = query_path)
   }
   
   # connection
