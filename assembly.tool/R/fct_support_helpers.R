@@ -117,6 +117,8 @@ prep_for_sql = function(string, alias) {
 #' @param m_end_date the end date for the measure spell
 #' @param p_start_date the start date for the study period
 #' @param p_end_date the end date for the study period
+#' @param sqlite T/F is the connection SQLite (different handling is required
+#' as sqlite does not have CONCAT or DATE-type)
 #'
 #' @return a list containing three arguments: label, value, and group.
 #' 
@@ -128,7 +130,8 @@ handle_summary_case = function(
     m_start_date,
     m_end_date,
     p_start_date,
-    p_end_date
+    p_end_date,
+    sqlite = FALSE
 ) {
   # checks
   stopifnot(is.character(summary_type))
@@ -140,14 +143,27 @@ handle_summary_case = function(
   stopifnot(is.character(p_end_date))
   stopifnot(is.logical(proportional))
   stopifnot(toupper(summary_type) %in% c("MIN", "MAX", "SUM", "COUNT", "EXISTS", "DURATION", "HISTOGRAM", "DISTINCT", "MEAN"))
+  stopifnot(is.logical(sqlite))
   
   # proportion calculation
-  numerator = glue::glue(
-    "DATEDIFF(DAY,",
-    "IIF({m_start_date} < {p_start_date}, {p_start_date}, {m_start_date}),",
-    "IIF({m_end_date} < {p_end_date}, {m_end_date}, {p_end_date}))"
+  numerator = ifelse(
+    sqlite,
+    glue::glue(
+      "JULIANDAY(IIF({m_end_date} < {p_end_date}, {m_end_date}, {p_end_date}))",
+      " - ",
+      "JULIANDAY(IIF({m_start_date} < {p_start_date}, {p_start_date}, {m_start_date}))"
+    ),
+    glue::glue(
+      "DATEDIFF(DAY,",
+      "IIF({m_start_date} < {p_start_date}, {p_start_date}, {m_start_date}),",
+      "IIF({m_end_date} < {p_end_date}, {m_end_date}, {p_end_date}))"
+    )
   )
-  denominator = glue::glue("DATEDIFF(DAY, {m_start_date}, {m_end_date})")
+  denominator = ifelse(
+    sqlite,
+    glue::glue("JULIANDAY({m_end_date}) - JULIANDAY({m_start_date})"),
+    glue::glue("DATEDIFF(DAY, {m_start_date}, {m_end_date})")
+  )
   proportional_calc = glue::glue("1.0 * (1 + {numerator}) / (1 + {denominator})")
   
   # prep and set defaults
@@ -178,12 +194,20 @@ handle_summary_case = function(
     if (proportional) {
       value = glue::glue("SUM(1 + {numerator})")
     } else {
-      value = glue::glue("SUM(1 + DATEDIFF(DAY, {m_start_date}, {m_end_date}))")
+      value = ifelse(
+        sqlite,
+        glue::glue("SUM(1 + JULIANDAY({m_end_date}) - JULIANDAY({m_start_date}))"),
+        glue::glue("SUM(1 + DATEDIFF(DAY, {m_start_date}, {m_end_date}))")
+      )
     }
     
   } else if (summary_type == "histogram") {
     prop_warn(proportional, summary_type)
-    label = glue::glue("CONCAT({m_label},'=',{m_value})")
+    label = ifelse(
+      sqlite, 
+      glue::glue("{m_label} || '=' || {m_value}"),
+      glue::glue("CONCAT({m_label},'=',{m_value})")
+    )
     value = glue::glue("COUNT({m_value})")
     group = c(m_label, m_value)
     

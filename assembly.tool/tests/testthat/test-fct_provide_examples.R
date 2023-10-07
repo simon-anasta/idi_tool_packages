@@ -30,6 +30,7 @@ test_that("example copied", {
   expect_true(file.exists(file.path(path, "demonstration_example", "data_benefit_payment.csv")))
   expect_true(file.exists(file.path(path, "demonstration_example", "data_project_population.csv")))
   expect_true(file.exists(file.path(path, "demonstration_example", "output_long_thin.csv")))
+  expect_true(file.exists(file.path(path, "demonstration_example", "output_rectangular.csv")))
   expect_true(file.exists(file.path(path, "demonstration_example", "run_assembly.R")))
   
   unlink(old_path, recursive = TRUE)

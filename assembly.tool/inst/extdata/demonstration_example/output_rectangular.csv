@@ -1,0 +1,5 @@
+"identity_column","label_identity","summary_period_start_date","summary_period_end_date","label_summary_period","""April fools trick""","""fall""","""vehicle""","any_accident","avg_payment","avg_payment_prop","cause=""April fools trick""","cause=""fall""","cause=""vehicle""","dist_payments","duration_all","duration_within","max_payment","min_payment","num_accidents","num_causes","sum_benefit_all","sum_benefit_within"
+1,"after","2012-04-01","2019-12-31","""fast appointment""",0,1,1,1,550,500.819672131148,0,1,1,2,338,278,1000,100,2,2,1100,1001.6393442623
+1,"before","2012-03-01","2012-04-01","registration to appointment",0,0,0,0,100,52.4590163934426,0,0,0,1,61,32,100,100,0,0,100,52.4590163934426
+2,"after","2019-01-01","2019-12-31","""delayed appointment""",1,0,0,1,300,300,1,0,0,1,93,93,300,300,1,1,300,300
+2,"before","2018-01-01","2019-01-01","registration to appointment",1,0,0,1,20,20,1,0,0,1,122,122,20,20,1,1,80,80

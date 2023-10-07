@@ -29,10 +29,11 @@
 #' @param db_connection An open connection to the database that contains the
 #' input tables (as specified in the control files) and the output location.
 #' @param output_database The name of the database that the output should be
-#' saved to. You mist have write permissions to this location.
+#' saved to. You must have write permissions to this location.
 #' Ideally delimited in square brackets.
+#' Use `"[]"` if no database name required.
 #' @param output_schema The name of the schema that the output should be saved
-#' to. Use a placeholder value if the database does not permit schemas. You
+#' to. Use `"[]"` if the database does not permit schemas. You
 #' must have write permissions to this location.
 #' Ideally delimited in square brackets.
 #' @param output_table_long The name of the long-thin table that the output
@@ -51,6 +52,9 @@
 #' @param control_append_long_thin (Optional) T/F should the tool append the new
 #' records to the existing long-thin table. Useful if undertaking assembly in
 #' multiple steps. Defaults to FALSE.
+#' @param query_path If provided will attempt to save a copy of the SQL code
+#' sent to/executed on the database to the provided folder. Save occurs before
+#' execution, hence useful for debugging.
 #' 
 #' @return None, makes permanent changes to the database.
 #' 
@@ -67,7 +71,8 @@ dataset_assembly_tool = function(
     control_development_mode,
     control_run_checks_only = FALSE,
     control_silence_progress = FALSE,
-    control_append_long_thin = FALSE
+    control_append_long_thin = FALSE,
+    query_path = NA
 ) {
   #### check inputs ----
   stopifnot(is.logical(control_development_mode))
@@ -128,7 +133,7 @@ dataset_assembly_tool = function(
   checks3 = validate_measure_control_table_2(measures_control_table)
   dbplyr.helpers::run_time_inform_user("measures and indicators (2 of 2) checked", "details", control_silence_progress)
   
-  control_file_checks_all_pass = checks1 & checks2 & checks3
+  control_file_checks_all_pass = !checks1 & !checks2 & !checks3
   stopifnot(control_file_checks_all_pass)
   dbplyr.helpers::run_time_inform_user("controls and inputs validated", "heading", control_silence_progress)
   
@@ -165,7 +170,7 @@ dataset_assembly_tool = function(
   checks5 = validate_database_tables(measures_control_table, db_connection)
   dbplyr.helpers::run_time_inform_user("database tables validated for measure control", "details", control_silence_progress)
   
-  database_checks_all_pass = checks4 & checks5
+  database_checks_all_pass = !checks4 & !checks5
   stopifnot(database_checks_all_pass)
   dbplyr.helpers::run_time_inform_user("database contents validated", "heading", control_silence_progress)
   
@@ -184,7 +189,8 @@ dataset_assembly_tool = function(
       control_development_mode,
       control_run_checks_only,
       control_silence_progress,
-      control_append_long_thin
+      control_append_long_thin,
+      query_path = query_path
     )
     # notify user
     dbplyr.helpers::run_time_inform_user("long-thin table assembled", context = "heading", control_silence_progress)
@@ -201,7 +207,8 @@ dataset_assembly_tool = function(
       control_development_mode,
       control_run_checks_only,
       control_silence_progress,
-      control_append_long_thin
+      control_append_long_thin,
+      query_path = query_path
     )
     # notify user
     dbplyr.helpers::run_time_inform_user("rectangular table prepared", context = "heading", control_silence_progress)
@@ -210,7 +217,7 @@ dataset_assembly_tool = function(
 
   #### finish ----
   dbplyr.helpers::run_time_inform_user("dataset assembly tool complete", "heading", control_silence_progress)
-  return(NULL)
+  return(invisible(NULL))
 }
 
 ## assemble long-thin table ----------------------------------------------- ----
@@ -238,14 +245,15 @@ assemble_output_table = function(
     control_development_mode,
     control_run_checks_only = FALSE,
     control_silence_progress = FALSE,
-    control_append_long_thin = FALSE  
+    control_append_long_thin = FALSE,
+    query_path = NA
 ) {
   #### output table ----
   
   # delete
   if (!control_append_long_thin) {
     dbplyr.helpers::run_time_inform_user("deleting existing long-thin table", "all", control_silence_progress)
-    dbplyr.helpers::delete_table(db_connection, output_database, output_schema, output_table_long)
+    dbplyr.helpers::delete_table(db_connection, output_database, output_schema, output_table_long, query_path = query_path)
   }
   
   # required long-thin table
@@ -262,7 +270,7 @@ assemble_output_table = function(
   # create if does not exist
   if (!dbplyr.helpers::table_or_view_exists_in_db(db_connection, output_database, output_schema, output_table_long)) {
     dbplyr.helpers::run_time_inform_user("creating long-thin table", "all", control_silence_progress)
-    dbplyr.helpers::create_table(db_connection, output_database, output_schema, output_table_long, output_columns, OVERWRITE = FALSE)
+    dbplyr.helpers::create_table(db_connection, output_database, output_schema, output_table_long, output_columns, OVERWRITE = FALSE, query_path = query_path)
   }
   
   # confirm table has required columns
@@ -331,13 +339,18 @@ assemble_output_table = function(
         summary_type = measures_control_table[[row_m, "measure_summarised_by"]],
         proportional = as.logical(measures_control_table[[row_m, "proportional"]]),
         m_label, m_value,
-        m_start_date, m_end_date, p_start_date, p_end_date
+        m_start_date, m_end_date, p_start_date, p_end_date,
+        sqlite = any(grepl("sqlite", class(db_connection), ignore.case = TRUE))
       )
 
       group_by_columns = c(p_identity_column, p_identity_label, p_start_date, p_end_date, p_period_label, calculation$group)
       group_by_columns = group_by_columns[!dbplyr.helpers:::is_delimited(group_by_columns, "'")]
       GROUP_BY = ifelse(length(group_by_columns) == 0, "", paste0("GROUP BY ", paste0(group_by_columns, collapse = ", ")))
-
+      
+      # adjust for non-default arrangement
+      from_population = gsub("\\[\\]\\.", "", from_population)
+      from_measure = gsub("\\[\\]\\.", "", from_measure)
+      
       # prepare query
       sql_query = dbplyr::build_sql(
         con = db_connection,
@@ -352,7 +365,8 @@ assemble_output_table = function(
         output_database, 
         output_schema, 
         output_table_long,
-        list_of_columns = names(output_columns)
+        list_of_columns = names(output_columns),
+        query_path = query_path
       )
       
       msg = sprintf(
@@ -370,12 +384,12 @@ assemble_output_table = function(
   # compress & index assembled table
   if(connection_is_sql_server){
     dbplyr.helpers::run_time_inform_user("compacting long-thin table", "details", control_silence_progress)
-    dbplyr.helpers::compress_table(db_connection, output_database, output_schema, output_table_long)
+    dbplyr.helpers::compress_table(db_connection, output_database, output_schema, output_table_long, query_path = query_path)
     dbplyr.helpers::run_time_inform_user("indexing long-thin table", "details", control_silence_progress)
-    dbplyr.helpers::create_nonclustered_index(db_connection, output_database, output_schema, output_table_long, "identity_column")
+    dbplyr.helpers::create_nonclustered_index(db_connection, output_database, output_schema, output_table_long, "identity_column", query_path = query_path)
   }
   
-  return(NULL)
+  return(invisible(NULL))
 }
 
 ## prepare rectangular table ---------------------------------------------- ----
@@ -400,7 +414,8 @@ prepare_rectangular_table = function(
   control_development_mode,
   control_run_checks_only,
   control_silence_progress,
-  control_append_long_thin
+  control_append_long_thin,
+  query_path = NA
 ){
   #### warn if long-thin table contains duplicates ----
   dbplyr.helpers::run_time_inform_user("checking for duplicates", "details", control_silence_progress)
@@ -428,7 +443,15 @@ prepare_rectangular_table = function(
   pivoted_table = dbplyr.helpers::pivot_table(long_thin_table, label_column = "label_measure", value_column = "value_measure")
   
   dbplyr.helpers::run_time_inform_user("pivoting and saving rectangular", "heading", control_silence_progress)
-  written_tbl = dbplyr.helpers::write_to_database(pivoted_table, db_connection, output_database, output_schema, output_table_rectangular, OVERWRITE = TRUE)
+  written_tbl = dbplyr.helpers::write_to_database(
+    pivoted_table, 
+    db_connection, 
+    output_database, 
+    output_schema, 
+    output_table_rectangular, 
+    OVERWRITE = TRUE, 
+    query_path = query_path
+  )
   
   #### conclude ----
   
@@ -437,10 +460,10 @@ prepare_rectangular_table = function(
   # compress & index assembled table
   if(connection_is_sql_server){
     dbplyr.helpers::run_time_inform_user("compacting rectangular table", "details", control_silence_progress)
-    dbplyr.helpers::compress_table(db_connection, output_database, output_schema, output_table_rectangular)
+    dbplyr.helpers::compress_table(db_connection, output_database, output_schema, output_table_rectangular, query_path = query_path)
     dbplyr.helpers::run_time_inform_user("indexing rectangular table", "details", control_silence_progress)
-    dbplyr.helpers::create_nonclustered_index(db_connection, output_database, output_schema, output_table_rectangular, "identity_column")
+    dbplyr.helpers::create_nonclustered_index(db_connection, output_database, output_schema, output_table_rectangular, "identity_column", query_path = query_path)
   }
   
-  return(NULL)
+  return(invisible(NULL))
 }
