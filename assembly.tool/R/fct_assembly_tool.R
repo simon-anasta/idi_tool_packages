@@ -92,7 +92,7 @@ dataset_assembly_tool = function(
   if (is.character(population_control_table)) {
     tmp = NA
     try({tmp = read_table_file(population_control_table)}, silent = TRUE)
-    if(is.na(tmp)){
+    if(!is.data.frame(tmp)){
       stop("Can not read population control file from disc")
     }
     population_control_table = tmp
@@ -101,7 +101,7 @@ dataset_assembly_tool = function(
   if (is.character(measures_control_table)) {
     tmp = NA
     try({tmp = read_table_file(measures_control_table)}, silent = TRUE)
-    if(is.na(tmp)){
+    if(!is.data.frame(tmp)){
       stop("Can not read measure control file from disc")
     }
     measures_control_table = tmp
@@ -382,7 +382,7 @@ assemble_output_table = function(
   connection_is_sql_server = any(grepl("SQL Server", class(db_connection)))
   
   # compress & index assembled table
-  if(connection_is_sql_server){
+  if(connection_is_sql_server & !control_append_long_thin){
     dbplyr.helpers::run_time_inform_user("compacting long-thin table", "details", control_silence_progress)
     dbplyr.helpers::compress_table(db_connection, output_database, output_schema, output_table_long, query_path = query_path)
     dbplyr.helpers::run_time_inform_user("indexing long-thin table", "details", control_silence_progress)

@@ -58,11 +58,11 @@ control_measure[, "database_name"] = table_db
 ## testing validate_database_tables function ------------------------------ ----
 
 testthat::test_that("validation against database accepts correct input", {
-  testthat::expect_false(assembly.tool::validate_database_tables(control_population, db_conn))
-  testthat::expect_false(assembly.tool::validate_database_tables(control_measure, db_conn))
+  testthat::expect_false(assembly.tool:::validate_database_tables(control_population, db_conn))
+  testthat::expect_false(assembly.tool:::validate_database_tables(control_measure, db_conn))
   
-  testthat::expect_silent(assembly.tool::validate_database_tables(control_population, db_conn))
-  testthat::expect_silent(assembly.tool::validate_database_tables(control_measure, db_conn))
+  testthat::expect_silent(assembly.tool:::validate_database_tables(control_population, db_conn))
+  testthat::expect_silent(assembly.tool:::validate_database_tables(control_measure, db_conn))
 })
 
 testthat::test_that("validation against database rejects incorrect input", {
@@ -70,11 +70,11 @@ testthat::test_that("validation against database rejects incorrect input", {
   tmp_p = control_population; tmp_p[1, 1] = "[db that does not exist]"
   tmp_m = control_measure; tmp_m[1, 5] = "[col that does not exist]"
   
-  testthat::expect_true(suppressWarnings(assembly.tool::validate_database_tables(tmp_p, db_conn)))
-  testthat::expect_true(suppressWarnings(assembly.tool::validate_database_tables(tmp_m, db_conn)))
+  testthat::expect_true(suppressWarnings(assembly.tool:::validate_database_tables(tmp_p, db_conn)))
+  testthat::expect_true(suppressWarnings(assembly.tool:::validate_database_tables(tmp_m, db_conn)))
   
-  testthat::expect_warning(assembly.tool::validate_database_tables(tmp_p, db_conn))
-  testthat::expect_warning(assembly.tool::validate_database_tables(tmp_m, db_conn))
+  testthat::expect_warning(assembly.tool:::validate_database_tables(tmp_p, db_conn))
+  testthat::expect_warning(assembly.tool:::validate_database_tables(tmp_m, db_conn))
 })
 
 testthat::test_that("numeric operations fail on non-numeric columns", {
@@ -87,8 +87,8 @@ testthat::test_that("numeric operations fail on non-numeric columns", {
   tmp_m = control_measure
   tmp_m[tmp_m$table_name == "[tmp_benefit_payment]", "table_name"] = "[tmp_benefit_payment_flaw]"
 
-  testthat::expect_true(suppressWarnings(assembly.tool::validate_database_tables(tmp_m, db_conn)))
-  testthat::expect_warning(assembly.tool::validate_database_tables(tmp_m, db_conn))
+  testthat::expect_true(suppressWarnings(assembly.tool:::validate_database_tables(tmp_m, db_conn)))
+  suppressWarnings(testthat::expect_warning(assembly.tool:::validate_database_tables(tmp_m, db_conn)))
   
   # tidy up
   dbplyr.helpers::delete_table(db_conn,  table_db, our_schema, "[tmp_benefit_payment_flaw]", query_path = query_path)
@@ -99,7 +99,7 @@ testthat::test_that("numeric operations fail on non-numeric columns", {
 testthat::test_that("long-thin table prepared as expected", {
   # make output
   testthat::expect_output(
-    assembly.tool::assemble_output_table(
+    assembly.tool:::assemble_output_table(
       population_control_table = control_population,
       measures_control_table = control_measure,
       db_connection = db_conn,
@@ -116,7 +116,7 @@ testthat::test_that("long-thin table prepared as expected", {
   )
   
   testthat::expect_silent(
-    assembly.tool::assemble_output_table(
+    assembly.tool:::assemble_output_table(
       population_control_table = control_population,
       measures_control_table = control_measure,
       db_connection = db_conn,
@@ -153,6 +153,8 @@ testthat::test_that("long-thin table prepared as expected", {
   expected_long$label_summary_period = dbplyr.helpers:::remove_delimiters(expected_long$label_summary_period, "\"")
   expected_long$label_measure = dbplyr.helpers:::remove_delimiters(expected_long$label_measure, "\"")
   expected_long$label_measure = gsub("\"=\"", "=", expected_long$label_measure)
+  expected_long$summary_period_start_date = as.Date(expected_long$summary_period_start_date)
+  expected_long$summary_period_end_date = as.Date(expected_long$summary_period_end_date)
   
   # assert
   testthat::expect_true(all(colnames(actual_long) %in% colnames(expected_long)))
@@ -178,7 +180,7 @@ testthat::test_that("long-thin table prepared as expected", {
 testthat::test_that("rectangular table prepared as expected", {
   # make output
   testthat::expect_output(
-    assembly.tool::prepare_rectangular_table(
+    assembly.tool:::prepare_rectangular_table(
       population_control_table = control_population,
       measures_control_table = control_measure,
       db_connection = db_conn,
@@ -195,7 +197,7 @@ testthat::test_that("rectangular table prepared as expected", {
   )
   
   testthat::expect_silent(
-    assembly.tool::prepare_rectangular_table(
+    assembly.tool:::prepare_rectangular_table(
       population_control_table = control_population,
       measures_control_table = control_measure,
       db_connection = db_conn,
@@ -220,6 +222,10 @@ testthat::test_that("rectangular table prepared as expected", {
   
   # fetch expected
   expected_rect = read.csv(file.path(path, "output_rectangular.csv"), stringsAsFactors = FALSE, check.names = FALSE)
+  colnames(expected_rect) = gsub("\"", "", colnames(expected_rect))
+  expected_rect$label_summary_period = gsub("\"", "", expected_rect$label_summary_period)
+  expected_rect$summary_period_start_date = as.Date(expected_rect$summary_period_start_date)
+  expected_rect$summary_period_end_date = as.Date(expected_rect$summary_period_end_date)
   
   # sort
   actual_rect = dplyr::arrange(actual_rect, identity_column, label_identity)
@@ -244,31 +250,33 @@ testthat::test_that("rectangular table prepared as expected", {
 
 ## integration base test -------------------------------------------------- ----
 
-testhat::test_that("entire tool runs", {
+testthat::test_that("entire tool runs", {
   # reset_output
   dbplyr.helpers::delete_table(db_conn,  table_db, our_schema, "[tmp_long]", query_path = query_path)
   dbplyr.helpers::delete_table(db_conn,  table_db, our_schema, "[tmp_rect]", query_path = query_path)
   
-  assembly.tool::dataset_assembly_tool(
-    population_control_table = control_population,
-    measures_control_table = control_measure,
-    db_connection = db_conn,
-    output_database = table_db,
-    output_schema = our_schema,
-    output_table_long = "[tmp_long]",
-    output_table_rectangular = "[tmp_rect]",
-    control_development_mode = FALSE,
-    control_run_checks_only = FALSE,
-    control_silence_progress = FALSE,
-    control_append_long_thin = FALSE,
-    query_path = query_path
+  testthat::expect_output(
+    assembly.tool::dataset_assembly_tool(
+      population_control_table = control_population,
+      measures_control_table = control_measure,
+      db_connection = db_conn,
+      output_database = table_db,
+      output_schema = our_schema,
+      output_table_long = "[tmp_long]",
+      output_table_rectangular = "[tmp_rect]",
+      control_development_mode = FALSE,
+      control_run_checks_only = FALSE,
+      control_silence_progress = FALSE,
+      control_append_long_thin = FALSE,
+      query_path = query_path
+    )
   )
   
   actual_long = dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, "[tmp_long]")
-  testhat::expect_true(check.dataset::num_row(actual_long) == NUM_LONG_ROWS)
+  testthat::expect_true(check.dataset::num_row(actual_long) == NUM_LONG_ROWS)
   
   actual_rect = dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, "[tmp_rect]")
-  testhat::expect_true(check.dataset::num_row(actual_rect) == NUM_RECT_ROWS)
+  testthat::expect_true(check.dataset::num_row(actual_rect) == NUM_RECT_ROWS)
   
   #### rerun to confirm overwriting happens ----
   assembly.tool::dataset_assembly_tool(
@@ -281,16 +289,16 @@ testhat::test_that("entire tool runs", {
     output_table_rectangular = "[tmp_rect]",
     control_development_mode = FALSE,
     control_run_checks_only = FALSE,
-    control_silence_progress = FALSE,
+    control_silence_progress = TRUE,
     control_append_long_thin = FALSE,
     query_path = query_path
   )
   
   actual_long = dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, "[tmp_long]")
-  testhat::expect_true(check.dataset::num_row(actual_long) == NUM_LONG_ROWS)
+  testthat::expect_true(check.dataset::num_row(actual_long) == NUM_LONG_ROWS)
   
   actual_rect = dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, "[tmp_rect]")
-  testhat::expect_true(check.dataset::num_row(actual_rect) == NUM_RECT_ROWS)
+  testthat::expect_true(check.dataset::num_row(actual_rect) == NUM_RECT_ROWS)
   
   #### rerun in append mode ----
   
@@ -306,17 +314,17 @@ testhat::test_that("entire tool runs", {
       output_table_rectangular = "[tmp_rect]",
       control_development_mode = FALSE,
       control_run_checks_only = FALSE,
-      control_silence_progress = FALSE,
+      control_silence_progress = TRUE,
       control_append_long_thin = TRUE,
       query_path = query_path
     )
   )
   
   actual_long = dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, "[tmp_long]")
-  testhat::expect_true(check.dataset::num_row(actual_long) == 2*NUM_LONG_ROWS)
+  testthat::expect_true(check.dataset::num_row(actual_long) == 2*NUM_LONG_ROWS)
   
   actual_rect = dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, "[tmp_rect]")
-  testhat::expect_true(check.dataset::num_row(actual_rect) == NUM_RECT_ROWS)
+  testthat::expect_true(check.dataset::num_row(actual_rect) == NUM_RECT_ROWS)
 })
 
 ## only checks no database changes ---------------------------------------- ----
@@ -336,7 +344,7 @@ test_that("only checks can be run", {
     output_table_rectangular = "[tmp_rect]",
     control_development_mode = FALSE,
     control_run_checks_only = TRUE,
-    control_silence_progress = FALSE,
+    control_silence_progress = TRUE,
     control_append_long_thin = FALSE,
     query_path = query_path
   )
@@ -347,7 +355,6 @@ test_that("only checks can be run", {
 
 ## run from file ---------------------------------------------------------- ----
 
-
 test_that("tool accepts string inputs", {
   # reset_output
   dbplyr.helpers::delete_table(db_conn,  table_db, our_schema, "[tmp_long]", query_path = query_path)
@@ -356,7 +363,6 @@ test_that("tool accepts string inputs", {
   # write control files as csv
   write.csv(control_population, file.path(path, "alt_control_p.csv"), row.names = FALSE)
   write.csv(control_measure, file.path(path, "alt_control_m.csv"), row.names = FALSE)
-  
   
   assembly.tool::dataset_assembly_tool(
     population_control_table =  file.path(path, "alt_control_p.csv"),
@@ -368,16 +374,16 @@ test_that("tool accepts string inputs", {
     output_table_rectangular = "[tmp_rect]",
     control_development_mode = FALSE,
     control_run_checks_only = FALSE,
-    control_silence_progress = FALSE,
+    control_silence_progress = TRUE,
     control_append_long_thin = FALSE,
     query_path = query_path
   )
   
   actual_long = dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, "[tmp_long]")
-  testhat::expect_true(check.dataset::num_row(actual_long) == NUM_LONG_ROWS)
+  testthat::expect_true(check.dataset::num_row(actual_long) == NUM_LONG_ROWS)
   
   actual_rect = dbplyr.helpers::create_access_point(db_conn, table_db, our_schema, "[tmp_rect]")
-  testhat::expect_true(check.dataset::num_row(actual_rect) == NUM_RECT_ROWS)
+  testthat::expect_true(check.dataset::num_row(actual_rect) == NUM_RECT_ROWS)
   
   # delete test files
   unlink(file.path(path, "alt_control_p.csv"))
