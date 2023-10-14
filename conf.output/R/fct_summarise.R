@@ -12,38 +12,54 @@
 #
 ################################################################################
 
-## Filter to limited number of rows --------------------------------------- ----
-#' Filter to a limited number of rows
+## convert lists to iterator ---------------------------------------------- ----
+#' Cross-product of column names
 #' 
+#' Creates the cross-products of its inputs. Designed for receiving column names
+#' and creating combinations to group-by in analysis. For example if we want
+#' every pairwise combination of demographic columns then store the names of
+#' the demographic columns in an array called `demographic_columns` and call:
+#' `cross_product_column_names(demographic_columns, demographic_columns)`
 #' 
-
-
-## convert lists to iterator -------------------------------------------
-#'
-#' Returns a list containing all cross-products of  column names.
-#' Intended for grouping by in analysis.
-#' 
-#' always parameter is included in each output.
-#' 
-#' drop.dupes.within controls whether duplicated parameters within each set
-#' of output columns are discarded.
-#' For example: (a,b,c,a,b) becomes (a,b,c).
+#' @param ... any number of arrays, to take the cross-product between.
+#' @param always an array of values that should always be included in the output
+#' combination.
+#' @param drop.dupes.within T/F, controls whether duplicated values within each
+#' output set are discarded. For example: `(a,b,c,a,b)` becomes `(a,b,c)`.
 #' Note: dplyr::group_by requires no duplicates so turning this off
-#' may produce errors if the output is used for summarising results.
+#' may produce errors if the output is used for summarizing results.
+#' Defaults to TRUE.
+#' @param drop.dupes.across T/F, control whether duplicated sets of values
+#' across the output are discarded. For example: `list(c(a,b,c), c(a,c,b))`
+#' will only output `c(a,b,c)`.
+#' Defaults to TRUE.
 #' 
-#' drop.dupes.across control whether duplicate sets of parameters are discarded.
-#' For example: (a,b,c) and (a,c,b) will only output (a,b,c)
+#' @return A list of arrays produced by taking the cross-products of each input
+#' group, appending the always inputs, and tidying by removing duplication
+#' where applicable.
 #' 
-#' For example: always = (a,b,c), grp1 = (d,e), grp2 = (f,g)
-#' Returns list containing:
-#' (a,b,c,d,f), (a,b,c,d,g), (a,b,c,e,f), (a,b,c,e,g)
+#' @export
 #' 
-cross_product_column_names <- function(...,
-                                       always = NULL,
-                                       drop.dupes.within = TRUE,
-                                       drop.dupes.across = TRUE){
-  # checks
-  assert(is.null(always) | is.character(always), "[always] must be character")
+#' @examples
+#' # setup
+#' grp1 = c("d","e")
+#' grp2 = c("f","g")
+#' grp3 = c("a","b","c")
+#' # output
+#' cross_product_column_names(grp1, grp2, always = grp3)
+#' cross_product_column_names(grp3, grp3)
+#' cross_product_column_names(grp3, grp3, drop.dupes.across = FALSE)
+#' cross_product_column_names(grp3, grp3, drop.dupes.within = FALSE)
+#' 
+cross_product_column_names = function(
+    ...,
+    always = NULL,
+    drop.dupes.within = TRUE,
+    drop.dupes.across = TRUE
+){
+  stopifnot(is.null(always) | is.character(always))
+  stopifnot(is.logical(drop.dupes.within))
+  stopifnot(is.logical(drop.dupes.across))
   # setup
   groups = list(...)
   output = list(always)
@@ -51,9 +67,9 @@ cross_product_column_names <- function(...,
   # iterate through all combinations
   for(group in groups){
     new_list = list()
-    for(gg in group){
-      for(item in output){
-        new_list = c(new_list, list(c(item, gg)))
+    for(grp_element in group){
+      for(output_component in output){
+        new_list = c(new_list, list(c(output_component, grp_element)))
       }
     }
     output = new_list
@@ -61,43 +77,45 @@ cross_product_column_names <- function(...,
   
   # drop duplicates
   if(drop.dupes.within){
-    new_list = list()
-    for(item in output){
-      new_list = c(new_list, list(unique(item)))
-    }
-    output = new_list
+    output = lapply(output, unique)
   }
   
   # remove duplicates across cross-products (ignores order)
   if(drop.dupes.across){
-    new_list = list()
-    sort_list = list()
-    for(item in output){
-      sorted_item = sort(item)
-      if(!list(sorted_item) %in% sort_list){
-        sort_list = c(sort_list, list(sorted_item))
-        new_list = c(new_list, list(item))
-      }
-    }
-    output = new_list
+    output = lapply(output, sort)
+    output = unique(output)
   }
   
   return(output)
 }
 
-## check if long-thin format used ---------------------------------------------
-#'
-#' Checks the our long-thin format and column labels have been used.
-#' Formats:
-#' col01 val01 ... col99 val99 summarised_var distinct count  sum
-#' col01 val01 ... col99 val99 summarised_var raw_distinct raw_count raw_sum conf_distinct conf_count conf_sum
+## check if long-thin format used ----------------------------------------- ----
+#' Check long-thin format used
 #' 
-#' Checks
-#' - every column name is col_, val_, distinct, count, or sum
-#' - every col_ has a matching val_
+#' For consistency between summarise, confidentialise, and check functionality
+#' we impose a standard format for summarised output. Termed 'long-thin format'.
+#' 
+#' This format has pairs of 'col' and 'val' columns the describe the group
+#' represented by the data row. Followed by columns for outputs.
+#'
+#' @param df a data.frame to check for long-thin format
+#' 
+#' @return T/F, whether the data.frame complies with our long-thin format.
+#' 
+#' @details
+#' Long-thin format takes the form:
+#' `col01, val01, ..., col99, val99, summarised_var, distinct, count,  sum`
+#' Where the last three columns are optional, and can have a `raw_` or `conf_`
+#' prefix.
+#' 
+#' Hence we conduct the following checks to confirm a data frame is in this
+#' format: (1) every column name is col_, val_, distinct, count, or sum, and
+#' (2) every col* has a matching val*
+#' 
+#' @export
 #' 
 has_long_thin_format <- function(df){
-  assert(is.data.frame(df) | dplyr::is.tbl(df), "[df] must be a data.frame")
+  stopifnot(is.data.frame(df) | dplyr::is.tbl(df))
   
   column_names = colnames(df)
   
@@ -106,7 +124,6 @@ has_long_thin_format <- function(df){
   summary_var = grepl("^summarised_var$", column_names)
   summary = grepl("^(raw_|conf_|)(count|sum|distinct)$", column_names)
   
-  
   # same number of col and val
   same_number = sum(col00, na.rm = TRUE) == sum(val00, na.rm = TRUE)
   expected_columns = all(col00 | val00 | summary_var | summary)
@@ -114,40 +131,80 @@ has_long_thin_format <- function(df){
   return(same_number & expected_columns)
 }
 
-## single summarise and label -------------------------------------------------
+## single summarise and label --------------------------------------------- ----
+#' Single summarise and label
 #'
 #' Produces a summary of the specified groups with distinct, count, or sum.
 #' Does so in a way that is robust to whether df is a local or a remote table.
 #' Returns a local table in long-thin format.
 #' 
-#' argument clean allows three options:
-#' - none = no cleaning
-#' - na.as.zero = replaces NA values with zero before summarising
-#' - zero.as.na = replaces zero values with NA before summarising
-#' NA values are excluded from distinct, count, and sum.
+#' Used on its own, produces output consistent with `dplyr::group_by` followed
+#' by `dplyr::summarise`. It's advantage is its consistent output format, and
+#' how it is use with `summarise_and_label_over_lists` to produce many
+#' summaries with a single command.
 #' 
-#' argument remove.na.from.groups determines whether missing values are
-#' removed or kept in the grouping columns.
-#'
-summarise_and_label <- function(df,
-                                group_by_cols,
-                                summarise_col,
-                                make_distinct,
-                                make_count,
-                                make_sum,
-                                clean = "none", # {"none", "na.as.zero", "zero.as.na"}
-                                remove.na.from.groups = TRUE){
+#' @param df a data.frame to summarise. Can be in-memory or remote accessed
+#' with dbplyr.
+#' @param group_by_cols an array of column names to group the table by.
+#' @param summarise_col the name of a column to summarise.
+#' @param make_distinct T/F, whether the output should include a count of
+#' distinct values from `summarise_col`.
+#' @param make_count T/F, whether the output should include a count of values
+#' from `summarise_col`.
+#' @param make_sum T/F, whether the output should include the sum of values
+#' from `summarise_col`.
+#' @param clean hat cleaning, if any, to apply to the summarised column. Must
+#' be one of `{"none", "na.as.zero", "zero.as.na"}`. Defaults to `"none"`. See
+#' details for explanation.
+#' @param remove.na.from.groups T/F, whether missing values in the data should
+#' be excluded when grouping for summarisation. For example, if grouping by age
+#' should the output include a row for the records with no age.
+#' Defaults to TRUE.
+#' @param query_path If provided and data source is SQL will attempt to save a
+#' copy of the SQL code sent to/executed on the database to the provided folder.
+#' Save occurs before execution, hence useful for debugging.
+#'   
+#' @return a local data.frame in long-thin format containing the summarised
+#' results in long-thin format.
+#' 
+#' @details
+#' Argument `clean` determines how missing values are handled. Missing values
+#' are excluded from the results - they are neither counted nor summed.
+#' 
+#' The default option `"none"` leaves missing values as they appear in the
+#' data. The alternatives `"na.as.zero"` and `"zero.as.na"` convert between
+#' missing values and zero.
+#' 
+#' One example where this control is useful is producing average income: Should
+#' it be an average over all people or an average over those people with income?
+#' (As means have additional confidentiality rules, this function produces the
+#' sum/total and the count separately so that confidentiality can be applied
+#' to the numerator and denominator separator if required.)
+#' 
+#' @export
+summarise_and_label <- function(
+    df,
+    group_by_cols,
+    summarise_col,
+    make_distinct,
+    make_count,
+    make_sum,
+    clean = "none", # {"none", "na.as.zero", "zero.as.na"}
+    remove.na.from.groups = TRUE,
+    query_path = NA
+){
   #### checks ----
-  assert(is.data.frame(df) | dplyr::is.tbl(df), "[df] must be a data.frame")
-  assert(is.character(group_by_cols), "[group_by_cols] must be of type character")
-  assert(all(group_by_cols %in% colnames(df)), "at least one group column is not a column of [df]")
-  assert(is.character(summarise_col), "[summarise_col] must be of type character")
-  assert(length(summarise_col) == 1, "only one [summarise_col] can be specified")
-  assert(summarise_col %in% colnames(df), "[summarise_col] must be a column of [df]")
-  assert(clean %in% c("none", "na.as.zero", "zero.as.na"), "[clean] accepts only three options see documentation")
-  assert(is.logical(make_distinct), "[make_distinct] must be type logical")
-  assert(is.logical(make_count), "[make_count] must be type logical")
-  assert(is.logical(make_sum), "[make_sum] must be type logical")
+  stopifnot(is.data.frame(df) | dplyr::is.tbl(df))
+  stopifnot(is.character(group_by_cols))
+  stopifnot(all(group_by_cols %in% colnames(df)))
+  stopifnot(is.character(summarise_col))
+  stopifnot(length(summarise_col) == 1)
+  stopifnot(summarise_col %in% colnames(df))
+  stopifnot(clean %in% c("none", "na.as.zero", "zero.as.na"))
+  stopifnot(is.logical(make_distinct))
+  stopifnot(is.logical(make_count))
+  stopifnot(is.logical(make_sum))
+  stopifnot(make_distinct | make_count | make_sum)
   
   #### cleaning ----
   df = dplyr::select(df, all_of(c(group_by_cols, summarise_col)))
@@ -156,69 +213,47 @@ summarise_and_label <- function(df,
     # apply filters in a single step
     tmp = paste0(" !is.na(", group_by_cols, ") ")
     df = dplyr::filter(df, `!!!`(rlang::parse_exprs(tmp)))
-    
-    ## prev version
-    # for(gg in group_by_cols){
-    #   df = dplyr::filter(df, !is.na(!!sym(gg)))
-    # }
   }
   
   if(clean == "na.as.zero"){
-    df = dplyr::mutate(df, !!sym(summarise_col) := ifelse(is.na(!!sym(summarise_col)), 0, !!sym(summarise_col)))
+    df[[summarise_col]] = ifelse(is.na(df[[summarise_col]]), 0, df[[summarise_col]])
   } else if(clean == "zero.as.na"){
-    df = dplyr::mutate(df, !!sym(summarise_col) := ifelse(!!sym(summarise_col) == 0, NA, !!sym(summarise_col)))
+    df[[summarise_col]] = ifelse(df[[summarise_col]] == 0, NA, df[[summarise_col]])
   }
+  df = dplyr::filter(df, !is.na(!!rlang::sym(summarise_col)))
   
-  #### summarise ----
-  output_df = df %>%
-    dplyr::select(!!!syms(group_by_cols)) %>%
-    dplyr::distinct() %>%
-    dplyr::collect()
-  
-  df = dplyr::group_by(df, !!!syms(group_by_cols))
+  #### summarise clauses ----
+  summary_clauses = list()
   
   if(make_distinct){
-    tmp_df = df %>%
-      dplyr::filter(!is.na(!!sym(summarise_col))) %>%
-      dplyr::summarise(distinct = dplyr::n_distinct(!!sym(summarise_col)), .groups = "drop")
-    
-    # output query if relevant
-    if("tbl_sql" %in% class(tmp_df)){
-      save_to_sql(tmp_df %>% dbplyr::sql_render() %>% as.character(), "make distinct")
-    }
-    
-    output_df = tmp_df %>%
-      dplyr::collect() %>%
-      dplyr::right_join(output_df, by = group_by_cols)
+    clause = glue::glue("dplyr::n_distinct({summarise_col})")
+    clause = rlang::parse_expr(clause)
+    summary_clauses = c(summary_clauses, list(distinct = clause))
   }
   
   if(make_count){
-    tmp_df = df %>%
-      dplyr::summarise(count = sum(ifelse(is.na(!!sym(summarise_col)), 0, 1), na.rm = TRUE), .groups = "drop")
-    
-    # output query if relevant
-    if("tbl_sql" %in% class(tmp_df)){
-      save_to_sql(tmp_df %>% dbplyr::sql_render() %>% as.character(), "make count")
-    }
-    
-    output_df = tmp_df %>%
-      dplyr::collect() %>%
-      dplyr::right_join(output_df, by = group_by_cols)
+    clause = glue::glue("dplyr::n()")
+    clause = rlang::parse_expr(clause)
+    summary_clauses = c(summary_clauses, list(count = clause))
   }
   
   if(make_sum){
-    tmp_df = df %>%
-      dplyr::summarise(sum = sum(!!sym(summarise_col), na.rm = TRUE), .groups = "drop")
-    
-    # output query if relevant
-    if("tbl_sql" %in% class(tmp_df)){
-      save_to_sql(tmp_df %>% dbplyr::sql_render() %>% as.character(), "make sum")
-    }
-    
-    output_df = tmp_df %>%
-      dplyr::collect() %>%
-      dplyr::right_join(output_df, by = group_by_cols)
+    clause = glue::glue("sum({summarise_col}, na.rm = TRUE)")
+    clause = rlang::parse_expr(clause)
+    summary_clauses = c(summary_clauses, list(sum = clause))
   }
+
+  #### summarise ----
+  output_df = dplyr::group_by(df, !!!rlang::syms(group_by_cols))
+  output_df = dplyr::summarise(output_df, !!!summary_clauses, .groups = "drop")
+  
+  #### output query if relevant ----
+  if(!is.na(query_path) & "tbl_sql" %in% class(output_df)){
+    dbplyr.helpers::save_to_sql_script(output_df, "make _summary", query_path = query_path)
+  }
+  
+  ## fetch results ----
+  output_df = dplyr::collect(output_df)
   
   #### label ----
   # converting to long-thin format
@@ -229,10 +264,9 @@ summarise_and_label <- function(df,
     col = sprintf("col%02d", ii)
     val = sprintf("val%02d", ii)
     
-    output_df = output_df %>%
-      dplyr::mutate(!!sym(col) := group_by_cols[ii]) %>%
-      dplyr::rename(!!sym(val) := !!sym(group_by_cols[ii])) %>%
-      dplyr::mutate(!!sym(val) := as.character(!!sym(val)))
+    output_df[[col]] = group_by_cols[ii]
+    output_df = dplyr::rename(output_df, !!rlang::sym(val) := !!rlang::sym(group_by_cols[ii]))
+    output_df[[val]] = as.character(output_df[[val]])
     
     col_order = c(col_order, col, val)
   }
@@ -248,53 +282,64 @@ summarise_and_label <- function(df,
     col_order = c(col_order, "sum")
   }
   
-  output_df = output_df %>%
-    dplyr::mutate(summarised_var = summarise_col) %>%
-    dplyr::select(!!!syms(col_order))
+  output_df = dplyr::mutate(output_df, summarised_var = summarise_col)
+  output_df = dplyr::select(output_df, !!!rlang::syms(col_order))
   
   #### conclude ----
-  assert(has_long_thin_format(output_df), "output not long-thin formatted as expected")
+  stopifnot(has_long_thin_format(output_df))
   return(output_df)
 }
 
-## summarise and label from list ----------------------------------------------
+## summarise and label from list ------------------------------------------ ----
+#' Summarise results for all combinations in list
+#' 
+#' Produces a summary of every variable given in `summarise_list` for every
+#' group given in `group_by_list`. Does so in a way that is robust to whether
+#' df is a local or a remote table. Returns a local table in long-thin format.
+#' 
+#' Output produced is consistent with running multiple `dplyr::group_by` and
+#' `dplyr::summarise` commands. But produces many summaries with a single
+#' command and appends their output.
+#' 
+#' @param group_by_list a list where each entry is an array of column names to
+#' group the table by. Each item in `group_by_list` will become an input to
+#' `group_by_cols` in `summarise_and_label`.
+#' @param summarise_list a list where each entry is the name of a column to
+#' summarise. Each item in `summarise_list` will become an input to
+#' `summarise_col` in `summarise_and_label`.
+#' @inheritParams summarise_and_label
 #'
-#' Produces a summary of every variable given in summarise_list for every
-#' group given in group_by_list. Allows for distinct, count, or sum summary.
+#' @return a local data.frame in long-thin format containing the all the 
+#' summarised results appended together in long-thin format.
 #' 
-#' Does so in a way that is robust to whether df is a local or a remote table.
-#' Returns a local table in long-thin format.
+#' @inheritSection summarise_and_label details
 #' 
-#' argument clean allows three options:
-#' - none = no cleaning
-#' - na.as.zero = replaces NA values with zero before summarising
-#' - zero.as.na = replaces zero values with NA before summarising
-#' NA values are excluded from distinct, count, and sum.
+#' @export
 #' 
-#' argument remove.na.from.groups determines whether missing values are
-#' removed or kept in the grouping columns.
-#'
-summarise_and_label_over_lists <- function(df, 
-                                           group_by_list,
-                                           summarise_list,
-                                           make_distinct,
-                                           make_count,
-                                           make_sum,
-                                           clean = "none", # {"none", "na.as.zero", "zero.as.na"}
-                                           remove.na.from.groups = TRUE){
+summarise_and_label_over_lists <- function(
+    df, 
+    group_by_list,
+    summarise_list,
+    make_distinct,
+    make_count,
+    make_sum,
+    clean = "none", # {"none", "na.as.zero", "zero.as.na"}
+    remove.na.from.groups = TRUE,
+    query_path = NA
+){
   #### checks ----
-  assert(is.data.frame(df) | dplyr::is.tbl(df), "[df] must be of type data.frame")
-  assert(is.list(group_by_list), "[group_by_list] must be a list of groups")
-  assert(length(group_by_list) >= 1, "at least one group must be provided in [group_by_list]")
-  assert(is.list(summarise_list), "[summarise_list] must be a list of groups")
-  assert(length(summarise_list) >= 1, "at least one group must be provided in [summarise_list]")
+  stopifnot(is.data.frame(df) | dplyr::is.tbl(df))
+  stopifnot(is.list(group_by_list))
+  stopifnot(length(group_by_list) >= 1)
+  stopifnot(is.list(summarise_list))
+  stopifnot(length(summarise_list) >= 1)
   for(ii in 1:length(group_by_list)){
-    assert(is.character(group_by_list[[ii]]), glue::glue("group {ii} is not of type character"))
-    assert(all(group_by_list[[ii]] %in% colnames(df)), glue::glue("group {ii} requires columns not in [df]"))
+    stopifnot(is.character(group_by_list[[ii]]))
+    stopifnot(all(group_by_list[[ii]] %in% colnames(df)))
   }
   for(ii in 1:length(summarise_list)){
-    assert(is.character(summarise_list[[ii]]), glue::glue("summary column {ii} is not of type character"))
-    assert(summarise_list[[ii]] %in% colnames(df), glue::glue("summary column {ii} is not found in [df]"))
+    stopifnot(is.character(summarise_list[[ii]]))
+    stopifnot(summarise_list[[ii]] %in% colnames(df))
   }
   
   #### make all combinations ----
@@ -302,7 +347,17 @@ summarise_and_label_over_lists <- function(df,
   
   for(gg in group_by_list){
     for(ss in summarise_list){
-      this_df = summarise_and_label(df, gg, ss, make_distinct, make_count, make_sum, clean, remove.na.from.groups)
+      this_df = summarise_and_label(
+        df,
+        gg, 
+        ss, 
+        make_distinct, 
+        make_count, 
+        make_sum, 
+        clean, 
+        remove.na.from.groups,
+        query_path
+      )
       
       output_list = c(output_list, list(this_df))
     }
@@ -311,12 +366,17 @@ summarise_and_label_over_lists <- function(df,
   #### conclude ----
   
   # ensure all val columns are of type character
-  output_list = lapply(output_list, function(df){mutate(df, across(starts_with("val"), as.character))})
+  output_list = lapply(
+    output_list, 
+    function(df){
+      dplyr::mutate(df, dplyr::across(dplyr::starts_with("val"), as.character))
+    }
+  )
   
   # list of df's into a single df
   output_df = dplyr::bind_rows(output_list)
   
-  assert(has_long_thin_format(output_df), "output not long-thin formatted as expected")
+  stopifnot(has_long_thin_format(output_df))
   return(output_df)
 }
 
