@@ -207,7 +207,7 @@ summarise_and_label <- function(
   stopifnot(make_distinct | make_count | make_sum)
   
   #### cleaning ----
-  df = dplyr::select(df, all_of(c(group_by_cols, summarise_col)))
+  df = dplyr::select(df, dplyr::all_of(c(group_by_cols, summarise_col)))
   
   if(remove.na.from.groups){
     # apply filters in a single step
@@ -312,7 +312,7 @@ summarise_and_label <- function(
 #' @return a local data.frame in long-thin format containing the all the 
 #' summarised results appended together in long-thin format.
 #' 
-#' @inheritSection summarise_and_label details
+#' @inherit summarise_and_label details
 #' 
 #' @export
 #' 

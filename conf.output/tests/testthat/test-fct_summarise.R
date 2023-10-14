@@ -315,7 +315,7 @@ test_that("individual summarise NA controls trigger", {
     dplyr::arrange(this_actual_output, col01, val01, col02, val02),
     dplyr::arrange(expected_output_none, col01, val01, col02, val02)
   ))
-
+  
   this_actual_output = summarise_and_label(
     df = input_df,
     group_by_cols = c("your_label", "my_label"),
@@ -331,7 +331,7 @@ test_that("individual summarise NA controls trigger", {
     dplyr::arrange(this_actual_output, col01, val01, col02, val02),
     dplyr::arrange(expected_output_NA, col01, val01, col02, val02)
   ))
-
+  
   this_actual_output = summarise_and_label(
     df = input_df,
     group_by_cols = c("your_label", "my_label"),
@@ -380,7 +380,7 @@ test_that("individual summarise remove NA from groups", {
     dplyr::arrange(this_actual_output, col01, val01),
     dplyr::arrange(expected_output_none, col01, val01)
   ))
-
+  
   this_actual_output = summarise_and_label(
     df = input_df,
     group_by_cols = "values",
