@@ -2,17 +2,21 @@
 % Please edit documentation in R/fct_check_confidential.R
 \name{check_rounding_to_base_array}
 \alias{check_rounding_to_base_array}
-\title{Filter to a limited number of rows}
+\title{Check rounding of array}
 \usage{
 check_rounding_to_base_array(input_array, base = 3, na.rm = TRUE)
 }
-\description{
-Returns TRUE is the provided array only contains values that are rounded to
-the specified base.
+\arguments{
+\item{input_array}{a numeric array to test for rounding.}
+
+\item{base}{the base for the array to be rounded to. Defaults to 3.}
+
+\item{na.rm}{T/F, whether missing values should be treated as pass or fail.
+Defaults to TRUE, so missing values are considered rounded.}
 }
-\details{
-If na.rm = TRUE (default) then ignores missing (NA) values.
-Else returns FALSE.
-Warns if all values are missing (NA)
-Errors on non-numeric input.
+\value{
+T/F. whether all the values in the array are rounded to \code{base}.
+}
+\description{
+Check rounding of array
 }

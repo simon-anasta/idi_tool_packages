@@ -2,21 +2,32 @@
 % Please edit documentation in R/fct_check_confidential.R
 \name{check_graduated_rounding_df}
 \alias{check_graduated_rounding_df}
-\title{Returns TRUE if the provided column in the dataframe only contains values
-that are graduated rounded:}
+\title{Check graduated rounding of column in data.frame}
 \usage{
 check_graduated_rounding_df(df, column, na.rm = TRUE)
 }
+\arguments{
+\item{df}{the data.frame to check rounding of.}
+
+\item{column}{the name of the column of \code{df} to be checked.}
+
+\item{na.rm}{T/F, whether missing values should be treated as pass or fail.
+Defaults to TRUE, so missing values are considered rounded.}
+}
+\value{
+T/F. whether all the values in the array are rounded.
+}
 \description{
-values   base
-0-18    3
-19     2
-20-99    5
-100-999   10
-1000+  100
+Check graduated rounding of column in data.frame
 }
 \details{
-If na.rm = TRUE (default) then ignores missing (NA) values.
-Warns if all values are missing (NA)
-Errors on non-numeric input.
+Graduated rounding requires values of different magnitudes are rounded
+to different based. This is done according to the following:\tabular{ll}{
+   values \tab base \cr
+   0-18 \tab 3 \cr
+   19 \tab 2 \cr
+   20-99 \tab 5 \cr
+   100-999 \tab 10 \cr
+   1000+ \tab 100 \cr
+}
 }

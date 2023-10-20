@@ -2,18 +2,33 @@
 % Please edit documentation in R/fct_check_confidential.R
 \name{check_absence_of_zero_counts}
 \alias{check_absence_of_zero_counts}
-\title{If small non-zero counts are suppressed and zero counts do not appear in the
-dataset, then there is a confidentiality risk that true zeros could be
-recovered because they are handled differently from small non-zero counts.}
+\title{Check for the absence of zero counts}
 \usage{
 check_absence_of_zero_counts(df, conf_count_col, print_on_fail = FALSE)
 }
+\arguments{
+\item{df}{the data.frame to check in long-thin format.}
+
+\item{conf_count_col}{the name of the column of counts to check.}
+
+\item{print_on_fail}{T/F, whether to print at least one combination that
+is missing from the data.frame on failure.}
+}
+\value{
+T/F, whether there is no detected risk of zero counts being treated
+differently from small, suprpessed counts.
+}
 \description{
-Returns TRUE if the absence of zero counts does not pose a confidentiality
-risk - either there are no suppressed counts OR all combinations of
-labels/groups appear in the dataset.
+If small non-zero counts are suppressed and zero counts do not appear in the
+dataset, then there is a confidentiality risk that true zeros could be
+recovered because they are handled differently from small non-zero counts.
 }
 \details{
+Returns TRUE if the absence of zero counts does not pose a confidentiality
+risk - either there are no suppressed counts OR all combinations of
+labels/groups appear in the data.frame. Hence true zero values can not be
+infered by the absence of a label/group from the data.frame.
+
 As a summarised dataset may be produced by appending multiple summaries
 we run the analysis within each combination.
 
@@ -22,8 +37,6 @@ the dataset is printed.
 
 If a risk is identified (function returns FALSE), there are
 two common solutions:
-\enumerate{
-\item remove all rows that contain suppression of small non-zero counts
-\item use expand_to_include_zero_counts to add zero count rows into dataset
-}
+(1) remove all rows that contain suppression of small non-zero counts
+(2) use expand_to_include_zero_counts to add zero count rows into data.frame
 }

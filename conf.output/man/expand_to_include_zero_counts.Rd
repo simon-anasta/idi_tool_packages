@@ -2,21 +2,25 @@
 % Please edit documentation in R/fct_check_confidential.R
 \name{expand_to_include_zero_counts}
 \alias{expand_to_include_zero_counts}
-\title{If small non-zero counts are suppressed and zero counts do not appear in the
-dataset, then there is a confidentiality risk that true zeros could be
-recovered because they are handled differently from small non-zero counts.}
+\title{Expand data.frame to include missing rows}
 \usage{
 expand_to_include_zero_counts(df)
 }
-\description{
-Where a risk is identified (by check_absence_of_zero_counts), there are
-two common solutions:
-\enumerate{
-\item remove all rows that contain suppression of small non-zero counts
-\item use expand_to_include_zero_counts to add zero count rows into dataset
+\arguments{
+\item{df}{the data.frame to modify in long-thin format.}
 }
-}
-\details{
+\value{
+a data.frame with all interactions of \code{col} and \code{val}.
 As a summarised dataset may be produced by appending multiple summaries
 we expand within each combination.
+}
+\description{
+If small non-zero counts are suppressed and zero counts do not appear in the
+data.frame, then there is a confidentiality risk that true zeros could be
+recovered because they are handled differently from small non-zero counts.
+}
+\details{
+Where a risk is identified (by \code{check_absence_of_zero_counts}), one solutions
+is to add zero count rows back into the data.frame - the purpose of this
+function.
 }

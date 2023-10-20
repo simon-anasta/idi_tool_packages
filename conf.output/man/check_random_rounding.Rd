@@ -2,22 +2,22 @@
 % Please edit documentation in R/fct_check_confidential.R
 \name{check_random_rounding}
 \alias{check_random_rounding}
-\title{Returns TRUE if the provided column in the dataframe has been rounded to the
-specified base.}
+\title{Check randomness of rounding in data.frame}
 \usage{
-check_random_rounding(
-  df,
-  raw_col = NA,
-  conf_col,
-  base = 3,
-  print_ratios = FALSE
-)
+check_random_rounding(df, raw_col, conf_col, base = 3, print_ratios = FALSE)
+}
+\arguments{
+\item{df}{the data.frame to check rounding of.}
+
+\item{raw_col}{the name of the raw/unrounded column of \code{df}.}
+
+\item{conf_col}{the name of the confidentialised/rounded column of \code{df}.}
+
+\item{base}{the base for the array to be rounded to. Defaults to 3.}
+
+\item{print_ratios}{T/F, whether to display the ratio between the different
+rounding differences.}
 }
 \description{
-If a raw column is provided then also checks the randomness of the rounding.
-\itemize{
-\item Warns if a raw/unrounded column is not provided.
-\item Warns if rounding does not appear to be random.
-\item Warns if difference between raw and rounded columns is too large.
-}
+Check randomness of rounding in data.frame
 }

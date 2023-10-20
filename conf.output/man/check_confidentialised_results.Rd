@@ -2,8 +2,7 @@
 % Please edit documentation in R/fct_check_confidential.R
 \name{check_confidentialised_results}
 \alias{check_confidentialised_results}
-\title{Runs and reports on random rounding, suppression, and handling of zeros
-using the most common defaults.}
+\title{Check most common conditions for long-thin output}
 \usage{
 check_confidentialised_results(
   df,
@@ -12,7 +11,27 @@ check_confidentialised_results(
   SUM_THRESHOLD = 20
 )
 }
+\arguments{
+\item{df}{the data.frame to check in long-thin format.}
+
+\item{BASE}{the base for random rounding. Defaults to 3.}
+
+\item{COUNT_THRESHOLD}{the minimum acceptable count. Where \code{count} or
+\code{distinct} are below this threshold they should be suppressed. Defaults
+to 6.}
+
+\item{SUM_THRESHOLD}{the minimum accepted count to output a sum. If either
+\code{count} or \code{distinct} are below this threshold, the sum column should
+be suppressed. Defaults to 20.}
+}
+\value{
+a message summarising all the checks that were run with pass,
+fail, and skip messages. Skip means a check was not applicable as the
+required columns were not present in \code{df}. Pass means confidentiality
+rules upheld, fail means rules was not upheld.
+}
 \description{
 Runs and reports on random rounding, suppression, and handling of zeros
-using the most common defaults.
+using the most common defaults. Designed to take the direct output of
+\code{summarise_and_label_over_lists} followed by \code{confidentialise_results}.
 }

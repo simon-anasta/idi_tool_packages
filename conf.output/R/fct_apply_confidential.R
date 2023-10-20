@@ -87,7 +87,7 @@ apply_random_rounding <- function(df, RR_columns, BASE = 3, stable_across_cols =
     conf_col = paste0("conf_", this_col)
     
     # make raw_* column
-    df = dplyr::rename(df, !!rlang::sym(raw_col) := !!rlang::sym(this_col))
+    colnames(df)[colnames(df) == this_col] = raw_col
     
     # handle seeds
     seeds = NULL
@@ -144,8 +144,6 @@ apply_graduated_random_rounding <- function(df, GRR_columns, stable_across_cols 
     stopifnot(!any(stable_across_cols %in% GRR_columns))
   }
   
-  
-  
   # loop through column types
   for(this_col in GRR_columns){
     # value for this iteration
@@ -153,7 +151,7 @@ apply_graduated_random_rounding <- function(df, GRR_columns, stable_across_cols 
     conf_col = paste0("conf_", this_col)
     
     # make raw_* column
-    df = dplyr::rename(df, !!rlang::sym(raw_col) := !!rlang::sym(this_col))
+    colnames(df)[colnames(df) == this_col] = raw_col
     
     # handle seeds
     seeds = NULL
@@ -328,13 +326,13 @@ confidentialise_results <- function(
     
     # check rounding and suppression consistency
     for(ii in 1:length(num_cols)){
-      count_col = rlang::sym(count_cols[ii])
-      num_col = rlang::sym(num_cols[ii])
+      count_col = count_cols[ii]
+      num_col = num_cols[ii]
       
       # if raw >= threshold and conf < threshold, enforce rounding down so conf >= threshold
-      df = dplyr::mutate(df, !!num_col := ifelse(!!num_col < SUM_THRESHOLD & !!count_col >= SUM_THRESHOLD, !!num_col + BASE, !!num_col))
+      df[[num_col]] = ifelse(df[[num_col]] < SUM_THRESHOLD & df[[count_col]] >= SUM_THRESHOLD, df[[num_col]] + BASE, df[[num_col]])
       # if raw < threshold and conf >= threshold, enforce rounding down so conf < threshold
-      df = dplyr::mutate(df, !!num_col := ifelse(!!num_col >= SUM_THRESHOLD & !!count_col < SUM_THRESHOLD, !!num_col - BASE, !!num_col))
+      df[[num_col]] = ifelse(df[[num_col]] >= SUM_THRESHOLD & df[[count_col]] < SUM_THRESHOLD, df[[num_col]] - BASE, df[[num_col]])
     }
   }
   

@@ -5,34 +5,30 @@
 # Notes:
 # - Uses code folding by headers (Alt + O to collapse all)
 # - Specific long-thin data format used and output by these functions.
-# - Designed to work with both local/in-memory R data.frames and remote/SQL/
-#   dbplyr-translated data sources.
+# - Designed to work with in-memory R data.frames.
 #
 # Issues:
 #
 ################################################################################
 
-## Filter to limited number of rows --------------------------------------- ----
-#' Filter to a limited number of rows
+## check rounded to specified base (array) -------------------------------- ----
+#' Check rounding of array
 #' 
-
-## check rounded to specified base (array) ------------------------------------
+#' @param input_array a numeric array to test for rounding.
+#' @param base the base for the array to be rounded to. Defaults to 3.
+#' @param na.rm T/F, whether missing values should be treated as pass or fail.
+#' Defaults to TRUE, so missing values are considered rounded.
 #' 
-#' Returns TRUE is the provided array only contains values that are rounded to
-#' the specified base.
+#' @return T/F. whether all the values in the array are rounded to `base`.
 #' 
-#' If na.rm = TRUE (default) then ignores missing (NA) values.
-#' Else returns FALSE.
-#' Warns if all values are missing (NA)
-#' Errors on non-numeric input.
-#' 
+#' @export
 check_rounding_to_base_array <- function(input_array, base = 3, na.rm = TRUE){
-  assert(is.numeric(base), "base must be numeric")
-  assert(is.logical(na.rm), "na.rm must be logical")
+  stopifnot(is.numeric(base))
+  stopifnot(is.logical(na.rm))
   # require input array has length
-  assert(length(input_array) > 0, "no input values")
+  stopifnot(length(input_array) > 0)
   # check numeric
-  assert(all(is.numeric(input_array) | is.logical(input_array), na.rm = TRUE), "input is non-numeric")
+  stopifnot(all(is.numeric(input_array) | is.logical(input_array), na.rm = TRUE))
   
   # warn if only NA's
   if(length(input_array) == sum(is.na(input_array))){
@@ -44,27 +40,27 @@ check_rounding_to_base_array <- function(input_array, base = 3, na.rm = TRUE){
   return(ifelse(is.na(result), FALSE, result))
 }
 
-## check rounded to specified base (dataframe) --------------------------------
+## check rounded to specified base (data.frame) --------------------------- ----
+#' Check rounding of column in data.frame
 #' 
-#' Returns TRUE if the provided column in the dataframe only contains values
-#' that are rounded to the specified base.
+#' @param df the data.frame to check rounding of.
+#' @param column the name of the column of `df` to be checked.
+#' @param base the base for the array to be rounded to. Defaults to 3.
+#' @param na.rm T/F, whether missing values should be treated as pass or fail.
+#' Defaults to TRUE, so missing values are considered rounded.
 #' 
-#' If na.rm = TRUE (default) then ignores missing (NA) values.
-#' Warns if all values are missing (NA)
-#' Errors on non-numeric input.
+#' @return T/F. whether all the values in the array are rounded to `base`.
 #' 
+#' @export
 check_rounding_to_base_df <- function(df, column, base = 3, na.rm = TRUE){
-  # df is a dataframe
-  assert(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df), "df is not dataset")
+  # df is a data.frame
+  stopifnot(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df))
   # df is a local dataset (not remote)
   df_classes = tolower(class(df))
-  assert(
-    !any(sapply(df_classes, grepl, pattern = "sql")),
-    "df must be a local dataset"
-  )
+  stopifnot(!any(grepl("sql", df_classes, ignore.case = TRUE)))
   # column is part of df
-  assert(is.character(column), "column must be of type character")
-  assert(column %in% colnames(df), "column is not a column name of df")
+  stopifnot(is.character(column))
+  stopifnot(column %in% colnames(df))
   
   # run checks
   col_to_array = df[[column]]
@@ -72,35 +68,39 @@ check_rounding_to_base_df <- function(df, column, base = 3, na.rm = TRUE){
   return(check_rounding_to_base_array(col_to_array, base = base, na.rm = na.rm))
 }
 
-## check graduated rounding (dataframe) ---------------------------------------
+## check graduated rounding (data.frame) ---------------------------------- ----
+#' Check graduated rounding of column in data.frame
 #' 
-#' Returns TRUE if the provided column in the dataframe only contains values
-#' that are graduated rounded:
+#' @param df the data.frame to check rounding of.
+#' @param column the name of the column of `df` to be checked.
+#' @param na.rm T/F, whether missing values should be treated as pass or fail.
+#' Defaults to TRUE, so missing values are considered rounded.
 #' 
-#' values   base
-#'    0-18    3
-#'     19     2
-#'   20-99    5
-#' 100-999   10
-#'   1000+  100
+#' @return T/F. whether all the values in the array are rounded.
 #' 
-#' If na.rm = TRUE (default) then ignores missing (NA) values.
-#' Warns if all values are missing (NA)
-#' Errors on non-numeric input.
+#' @details
+#' Graduated rounding requires values of different magnitudes are rounded
+#' to different based. This is done according to the following:
 #' 
+#' | values  | base |
+#' |---------|------|
+#' |    0-18 |   3  |
+#' |     19  |   2  |
+#' |   20-99 |   5  |
+#' | 100-999 |  10  |
+#' |   1000+ | 100  |
+#' 
+#' @export
 check_graduated_rounding_df <- function(df, column, na.rm = TRUE){
-  # df is a dataframe
-  assert(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df), "df is not dataset")
+  # df is a data.frame
+  stopifnot(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df))
   # df is a local dataset (not remote)
   df_classes = tolower(class(df))
-  assert(
-    !any(sapply(df_classes, grepl, pattern = "sql")),
-    "df must be a local dataset"
-  )
+  stopifnot(!any(grepl("sql", df_classes, ignore.case = TRUE)))
   # column is part of df
-  assert(is.character(column), "column must be of type character")
-  assert(column %in% colnames(df), "column is not a column name of df")
-  assert(is.logical(na.rm), "na.rm must be logical")
+  stopifnot(is.character(column))
+  stopifnot(column %in% colnames(df))
+  stopifnot(is.logical(na.rm))
   
   # run checks
   col_to_array = df[[column]]
@@ -115,48 +115,41 @@ check_graduated_rounding_df <- function(df, column, na.rm = TRUE){
   
   results = col_to_array %% expected_base == 0
   
-  if(sum(is.na(results)) == length(results))
+  if(sum(is.na(results)) == length(results)){
     warning("all input values are NA")
-  
-  if(na.rm)
+  }
+  if(na.rm){
     results = results | is.na(col_to_array)
+  }
   
   result = all(results, na.rm = na.rm)
   return(ifelse(is.na(result), FALSE, result))
 }
 
-## check random rounding ------------------------------------------------------
+## check random rounding -------------------------------------------------- ----
+#' Check randomness of rounding in data.frame
 #' 
-#' Returns TRUE if the provided column in the dataframe has been rounded to the
-#' specified base.
+#' @param df the data.frame to check rounding of.
+#' @param raw_col the name of the raw/unrounded column of `df`.
+#' @param conf_col the name of the confidentialised/rounded column of `df`.
+#' @param base the base for the array to be rounded to. Defaults to 3.
+#' @param print_ratios T/F, whether to display the ratio between the different
+#' rounding differences.
 #' 
-#' If a raw column is provided then also checks the randomness of the rounding.
-#' - Warns if a raw/unrounded column is not provided.
-#' - Warns if rounding does not appear to be random.
-#' - Warns if difference between raw and rounded columns is too large.
-#' 
-check_random_rounding <- function(df, raw_col = NA, conf_col, base = 3, print_ratios = FALSE){
-  # df is a local dataframe
-  assert(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df), "df is not dataset")
+#' @export
+check_random_rounding <- function(df, raw_col, conf_col, base = 3, print_ratios = FALSE){
+  # df is a local data.frame
+  stopifnot(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df))
   df_classes = tolower(class(df))
-  assert(
-    !any(sapply(df_classes, grepl, pattern = "sql")),
-    "df must be a local dataset"
-  )
+  stopifnot(!any(grepl("sql", df_classes, ignore.case = TRUE)))
   # columns are part of df
-  assert(is.character(raw_col) | is.na(raw_col), "raw_col must be of type character")
-  assert(raw_col %in% colnames(df) | is.na(raw_col), "raw_col is not a column name of df")
-  assert(is.character(conf_col), "conf_col must be of type character")
-  assert(conf_col %in% colnames(df), "conf_col is not a column name of df")
+  stopifnot(is.character(raw_col))
+  stopifnot(raw_col %in% colnames(df))
+  stopifnot(is.character(conf_col))
+  stopifnot(conf_col %in% colnames(df))
   
   # check rounding
   rounded_to_base = check_rounding_to_base_df(df, conf_col, base = base)
-  
-  # warn if no raw column
-  if(is.na(raw_col)){
-    warning("No raw column provided.\nRandomness of rounding not checked")
-    return(rounded_to_base)
-  }
   
   rounding_diff = df[[conf_col]] - df[[raw_col]]
   rounding_diff = rounding_diff[!is.na(rounding_diff)]
@@ -165,17 +158,14 @@ check_random_rounding <- function(df, raw_col = NA, conf_col, base = 3, print_ra
   # warn if difference is too large for rounding
   if(any(abs(rounding_diff) >= base)){
     warning("rounding not random - difference exceeds the base")
-    return(rounded_to_base)
   }
-  
-  # warn if all rounding up or all rounding down
+  # warn if all rounding up
   if(all(rounding_diff >= 0)){
     warning("rounding not random - all values rounded up")
-    return(rounded_to_base)
   }
+  # warn if all rounding down
   if(all(rounding_diff <= 0)){
     warning("rounding not random - all values rounded down")
-    return(rounded_to_base)
   }
   
   # table of ratios of each difference amount
@@ -185,9 +175,9 @@ check_random_rounding <- function(df, raw_col = NA, conf_col, base = 3, print_ra
     diff_df$round_by,
     function(x){ sum(abs(rounding_diff) == x) }
   )
-  diff_df$actual_perc = diff_df$count / length(rounding_diff)
-  diff_df$expect_perc = (base - diff_df$round_by) / ((base - 1) * base / 2)
-  diff_df$ratio = diff_df$actual_perc / diff_df$expect_perc
+  diff_df$actual_percent = diff_df$count / length(rounding_diff)
+  diff_df$expect_percent = (base - diff_df$round_by) / ((base - 1) * base / 2)
+  diff_df$ratio = diff_df$actual_percent / diff_df$expect_percent
   
   # warn if distribution of rounding is not expected pattern
   # allows a 20% variation
@@ -202,29 +192,33 @@ check_random_rounding <- function(df, raw_col = NA, conf_col, base = 3, print_ra
   return(rounded_to_base)
 }
 
-## check suppression of small counts ------------------------------------------
+## check suppression of small counts -------------------------------------- ----
+#' Check small count suppression
 #' 
-#' Returns TRUE if the provided column in the dataframe has no values where the
-#' count is less than the threshold.
+#' @param df the data.frame to check for suppression.
+#' @param suppressed_col the name of the column to check for suppression.
+#' @param threshold the minimum acceptable count. Values less than (but not
+#' equal to) the threshold should be suppressed.
+#' @param count_col the name of the column to compare with the threshold.
+#' Optional, defaults to `suppress_col` if not provided. The intention is that
+#' `count_col` contains the counts of unit records.
 #' 
-#' We expect: suppressed_col = NA if count_col < threshold.
-#' Threshold is the smallest acceptable count.
-#'  
+#' @return T/F, whether all records in `suppress_col` are suppressed (replaced
+#' with missing) where the count is below the threshold.
+#' 
+#' @export
 check_small_count_suppression <- function(df, suppressed_col, threshold, count_col = suppressed_col){
-  # df is a local dataframe
-  assert(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df), "df is not dataset")
+  # df is a local data.frame
+  stopifnot(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df))
   df_classes = tolower(class(df))
-  assert(
-    !any(sapply(df_classes, grepl, pattern = "sql")),
-    "df must be a local dataset"
-  )
+  stopifnot(!any(grepl("sql", df_classes, ignore.case = TRUE)))
   # columns are part of df
-  assert(is.character(suppressed_col), "suppressed_col must be of type character")
-  assert(suppressed_col %in% colnames(df), "suppressed_col is not a column name of df")
-  assert(is.character(count_col), "count_col must be of type character")
-  assert(count_col %in% colnames(df), "count_col is not a column name of df")
+  stopifnot(is.character(suppressed_col))
+  stopifnot(suppressed_col %in% colnames(df))
+  stopifnot(is.character(count_col))
+  stopifnot(count_col %in% colnames(df))
   # numeric threshold
-  assert(is.numeric(threshold), "threshold must be of type numeric")
+  stopifnot(is.numeric(threshold))
   
   # check suppression
   suppression_required = df[[count_col]] < threshold
@@ -233,15 +227,26 @@ check_small_count_suppression <- function(df, suppressed_col, threshold, count_c
   return(all(is.na(suppressed_vals)))
 }
 
-## check for absence of zero counts -------------------------------------------
+## check for absence of zero counts --------------------------------------- ----
+#' Check for the absence of zero counts
 #' 
 #' If small non-zero counts are suppressed and zero counts do not appear in the
 #' dataset, then there is a confidentiality risk that true zeros could be
 #' recovered because they are handled differently from small non-zero counts.
 #' 
+#' @param df the data.frame to check in long-thin format.
+#' @param conf_count_col the name of the column of counts to check.
+#' @param print_on_fail T/F, whether to print at least one combination that
+#' is missing from the data.frame on failure.
+#' 
+#' @return T/F, whether there is no detected risk of zero counts being treated
+#' differently from small, suprpessed counts.
+#' 
+#' @details
 #' Returns TRUE if the absence of zero counts does not pose a confidentiality
 #' risk - either there are no suppressed counts OR all combinations of
-#' labels/groups appear in the dataset.
+#' labels/groups appear in the data.frame. Hence true zero values can not be
+#' infered by the absence of a label/group from the data.frame.
 #' 
 #' As a summarised dataset may be produced by appending multiple summaries
 #' we run the analysis within each combination.
@@ -251,22 +256,19 @@ check_small_count_suppression <- function(df, suppressed_col, threshold, count_c
 #' 
 #' If a risk is identified (function returns FALSE), there are
 #' two common solutions:
-#'   1) remove all rows that contain suppression of small non-zero counts
-#'   2) use expand_to_include_zero_counts to add zero count rows into dataset
+#' (1) remove all rows that contain suppression of small non-zero counts
+#' (2) use expand_to_include_zero_counts to add zero count rows into data.frame
 #' 
 check_absence_of_zero_counts <- function(df, conf_count_col, print_on_fail = FALSE){
-  # df is a local dataframe in required format
-  assert(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df), "df is not dataset")
+  # df is a local data.frame in required format
+  stopifnot(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df))
   df_classes = tolower(class(df))
-  assert(
-    !any(sapply(df_classes, grepl, pattern = "sql")),
-    "df must be a local dataset"
-  )
-  assert(has_long_thin_format(df), "output not long-thin formatted as expected")
+  stopifnot(!any(grepl("sql", df_classes, ignore.case = TRUE)))
+  stopifnot(has_long_thin_format(df))
   # columns are part of df
-  assert(is.character(conf_count_col), "conf_count_col must be of type character")
-  assert(conf_count_col %in% colnames(df), "conf_count_col is not a column name of df")
-  assert(is.logical(print_on_fail), "print_on_fail must be of type logical")
+  stopifnot(is.character(conf_count_col))
+  stopifnot(conf_count_col %in% colnames(df))
+  stopifnot(is.logical(print_on_fail))
   
   column_names = colnames(df)
   # column groups
@@ -275,33 +277,28 @@ check_absence_of_zero_counts <- function(df, conf_count_col, print_on_fail = FAL
   summary_var = "summarised_var"
   
   # convert all factor columns to character
-  df = df %>%
-    mutate(across(where(is.factor), as.character))
+  df = dplyr::mutate(df, dplyr::across(dplyr::where(is.factor), as.character))
   
   # all sub-summaries with the df
-  subsummaries = df %>%
-    dplyr::select(all_of(c(col00, summary_var))) %>%
-    dplyr::distinct()
+  subsummaries = dplyr::select(df, dplyr::all_of(c(col00, summary_var)))
+  subsummaries = dplyr::distinct(subsummaries)
   
   # iterate through all sub-summaries
   for(ii in 1:nrow(subsummaries)){
     # create sub-summary dataset
-    this_subsummary = df %>%
-      dplyr::semi_join(subsummaries[ii,], by = c(col00, summary_var))
+    this_subsummary = dplyr::semi_join(df, subsummaries[ii,], by = c(col00, summary_var))
     
     # if no NA values then there are no concerns - go to next sub-summary
     if(!any(is.na(this_subsummary[[conf_count_col]]))){ next }
     
     # create comparison with all rows
-    all_row_df = this_subsummary %>%
-      tidyr::expand(!!!syms(c(col00,val00, summary_var)))
+    all_row_df = tidyr::expand(this_subsummary, !!!rlang::syms(c(col00,val00, summary_var)))
     # combinations missing from current sub-summary
-    missing_rows = all_row_df %>%
-      dplyr::anti_join(this_subsummary, by = c(col00,val00, summary_var))
+    missing_rows = dplyr::anti_join(all_row_df, this_subsummary, by = c(col00,val00, summary_var))
     
     # if any values missing
     if(nrow(missing_rows) != 0){
-      if(print_on_fail){ print(head(missing_rows)) }
+      if(print_on_fail){ print(utils::head(missing_rows)) }
       return(FALSE)
     }
   }
@@ -310,29 +307,30 @@ check_absence_of_zero_counts <- function(df, conf_count_col, print_on_fail = FAL
   return(TRUE)
 }
 
-## expand to include zero counts ----------------------------------------------
+## expand to include zero counts ------------------------------------------ ----
+#' Expand data.frame to include missing rows
 #' 
 #' If small non-zero counts are suppressed and zero counts do not appear in the
-#' dataset, then there is a confidentiality risk that true zeros could be
+#' data.frame, then there is a confidentiality risk that true zeros could be
 #' recovered because they are handled differently from small non-zero counts.
 #' 
-#' Where a risk is identified (by check_absence_of_zero_counts), there are
-#' two common solutions:
-#'   1) remove all rows that contain suppression of small non-zero counts
-#'   2) use expand_to_include_zero_counts to add zero count rows into dataset
+#' Where a risk is identified (by `check_absence_of_zero_counts`), one solutions
+#' is to add zero count rows back into the data.frame - the purpose of this
+#' function.
 #' 
+#' @param df the data.frame to modify in long-thin format.
+#' 
+#' @return a data.frame with all interactions of `col` and `val`.
 #' As a summarised dataset may be produced by appending multiple summaries
 #' we expand within each combination.
 #' 
+#' @export
 expand_to_include_zero_counts <- function(df){
-  # df is a local dataframe in required format
-  assert(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df), "df is not dataset")
+  # df is a local data.frame in required format
+  stopifnot(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df))
   df_classes = tolower(class(df))
-  assert(
-    !any(sapply(df_classes, grepl, pattern = "sql")),
-    "df must be a local dataset"
-  )
-  assert(has_long_thin_format(df), "output not long-thin formatted as expected")
+  stopifnot(!any(grepl("sql", df_classes, ignore.case = TRUE)))
+  stopifnot(has_long_thin_format(df))
   
   column_names = colnames(df)
   # column groups
@@ -340,59 +338,67 @@ expand_to_include_zero_counts <- function(df){
   val00 = column_names[grepl("^val[0-9][0-9]$", column_names)]
   summary_var = "summarised_var"
   
-  col_order = colnames(df)
-  
   # convert all factor columns to character
-  df = df %>%
-    mutate(across(where(is.factor), as.character))
+  df = dplyr::mutate(df, dplyr::across(dplyr::where(is.factor), as.character))
   
   # all sub-summaries with the df
-  subsummaries = df %>%
-    dplyr::select(dplyr::all_of(c(col00, summary_var))) %>%
-    dplyr::distinct()
+  subsummaries = dplyr::select(df, dplyr::all_of(c(col00, summary_var)))
+  subsummaries = dplyr::distinct(subsummaries)
   
   expanded_rows_list = lapply(
     1:nrow(subsummaries),
     function(ii){
       # create sub-summary dataset
-      this_subsummary = df %>%
-        dplyr::semi_join(subsummaries[ii,], by = c(col00, summary_var))
+      this_subsummary = dplyr::semi_join(df, subsummaries[ii,], by = c(col00, summary_var))
       
       # create comparison with all rows
-      all_row_df = this_subsummary %>%
-        tidyr::expand(!!!syms(c(col00,val00, summary_var)))
+      all_row_df = tidyr::expand(this_subsummary, !!!rlang::syms(c(col00,val00, summary_var)))
       # sub-summary with all combinations included
-      expanded_rows = this_subsummary %>%
-        right_join(all_row_df, by = c(col00,val00, summary_var))
+      expanded_rows = dplyr::right_join(this_subsummary, all_row_df, by = c(col00,val00, summary_var))
     }
   )
   
-  expanded_rows_list %>%
-    dplyr::bind_rows() %>%
-    dplyr::select(dplyr::all_of(col_order)) %>%
-    return()
+  output = dplyr::bind_rows(expanded_rows_list)
+  output = dplyr::select(output, dplyr::all_of(column_names))
+  return(output)
 }
 
-## confidentialise results ----------------------------------------------------
+## check long-thin results ------------------------------------------------ ----
+#' Check most common conditions for long-thin output
 #' 
 #' Runs and reports on random rounding, suppression, and handling of zeros
-#' using the most common defaults.
+#' using the most common defaults. Designed to take the direct output of 
+#' `summarise_and_label_over_lists` followed by `confidentialise_results`.
 #' 
-check_confidentialised_results <- function(df,
-                                           BASE = 3,
-                                           COUNT_THRESHOLD = 6,
-                                           SUM_THRESHOLD = 20){
-  # df is a local dataframe in required format
-  assert(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df), "df is not dataset")
+#' @param df the data.frame to check in long-thin format.
+#' @param BASE the base for random rounding. Defaults to 3.
+#' @param COUNT_THRESHOLD the minimum acceptable count. Where `count` or
+#' `distinct` are below this threshold they should be suppressed. Defaults
+#' to 6.
+#' @param SUM_THRESHOLD the minimum accepted count to output a sum. If either
+#' `count` or `distinct` are below this threshold, the sum column should
+#' be suppressed. Defaults to 20.
+#' 
+#' @return a message summarising all the checks that were run with pass,
+#' fail, and skip messages. Skip means a check was not applicable as the
+#' required columns were not present in `df`. Pass means confidentiality
+#' rules upheld, fail means rules was not upheld.
+#' 
+#' @export
+check_confidentialised_results <- function(
+    df,
+    BASE = 3,
+    COUNT_THRESHOLD = 6,
+    SUM_THRESHOLD = 20
+){
+  # df is a local data.frame in required format
+  stopifnot(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df))
   df_classes = tolower(class(df))
-  assert(
-    !any(sapply(df_classes, grepl, pattern = "sql")),
-    "df must be a local dataset"
-  )
-  assert(has_long_thin_format(df), "output not long-thin formatted as expected")
-  assert(is.numeric(BASE), "BASE must be of type numeric")
-  assert(is.numeric(COUNT_THRESHOLD), "COUNT_THRESHOLD must be of type numeric")
-  assert(is.numeric(SUM_THRESHOLD), "SUM_THRESHOLD must be of type numeric")
+  stopifnot(!any(grepl("sql", df_classes, ignore.case = TRUE)))
+  stopifnot(has_long_thin_format(df))
+  stopifnot(is.numeric(BASE))
+  stopifnot(is.numeric(COUNT_THRESHOLD))
+  stopifnot(is.numeric(SUM_THRESHOLD))
   
   # log for output
   log = list(column = c(), check = c(), result = c())
@@ -472,146 +478,4 @@ check_confidentialised_results <- function(df,
   msg = sprintf(format_string, log$column, log$check, toupper(log$result))
   
   return(msg)
-}
-
-## summarised output overview report ------------------------------------------
-#' 
-#' Generate overview reports of summarised dataset for research review.
-#' Visual inspection of these reports as part of checks run during delivery
-#' will help confirm values are reasonable.
-#' 
-#' This function writes up to three files to the folder - one for each of
-#' distinct, count, and sum. Each file provides an overview of the range
-#' of values a measure takes.
-#' 
-#' For example
-#' - How much does the average value vary across the dataset?
-#' - How large is a group at its largest and how small at its smallest?
-#' 
-#' It is assumed that a researchers will know what reasonable values are for
-#' each variable and hence will be able to review from such a summary that the
-#' outputs are as expected.
-#' 
-#' For example, would you expect to observe...
-#' - the average income to be between $12k and $65k in the results?
-#' - the number of people to be between 100 and 10,000 in the results?
-#' 
-#' Note that values may fluctuate depending on the subgroups used.
-#' For example, if there are results for both all New Zealand and for only
-#' those people who are recent migrants, then the range of reasonable values
-#' should be wider than if results included only the entire population
-#' or only recent migrants. 
-#' 
-explore_output_report <- function(df, output_dir = NA, output_label = NA){
-  # df is a local dataframe in required format
-  assert(tibble::is_tibble(df) | is.data.frame(df) | dplyr::is.tbl(df), "df is not dataset")
-  df_classes = tolower(class(df))
-  assert(
-    !any(sapply(df_classes, grepl, pattern = "sql")),
-    "df must be a local dataset"
-  )
-  assert(has_long_thin_format(df), "output not long-thin formatted as expected")
-  
-  column_names = colnames(df)
-  # column groups
-  col00 = column_names[grepl("^col[0-9][0-9]$", column_names)]
-  val00 = column_names[grepl("^val[0-9][0-9]$", column_names)]
-  
-  ## output ----------------------------------------
-  output_dir = ifelse(is.na(output_dir), getwd(), output_dir)
-  output_label = ifelse(is.na(output_label), "", output_label)
-  output_files = c()
-  
-  write_files = function(df, type){
-    clean_time = format(Sys.time(), "%Y-%m-%d %H%M%S")
-    output_file = paste(clean_time, "output report", output_label, type)
-    full_path = paste0(output_dir, "/", output_file, ".csv")
-    
-    write.csv(df, full_path, row.names = FALSE)
-    return(full_path)
-  }
-  
-  ## summary overview ----------------------------------------
-  summary_overview = function(df, label){
-    df %>%
-      summarise(
-        !!sym(paste0("num_", label)) := n(),
-        !!sym(paste0("mean_", label)) := mean(values, na.rm = TRUE),
-        !!sym(paste0("min_", label)) := min(values, na.rm = TRUE),
-        !!sym(paste0("lower_quartile_", label)) := quantile(values, 0.25, na.rm = TRUE),
-        !!sym(paste0("median_", label)) := median(values, na.rm = TRUE),
-        !!sym(paste0("upper_quartile_", label)) := quantile(values, 0.75, na.rm = TRUE),
-        !!sym(paste0("max_", label)) := max(values, na.rm = TRUE),
-        .groups = "drop"
-      )
-  }
-  
-  #### count ----------------------------------------
-  if("conf_count" %in% colnames(df)){
-    # ensure numeric columns are stored as numeric
-    suppressWarnings({ df = dplyr::mutate(df, conf_count = as.numeric(conf_count)) })
-    
-    # component summaries
-    count_list = lapply(
-      1:length(col00),
-      function(ii){
-        # set up iteration key columns
-        this_col = col00[ii]
-        this_val = val00[ii]
-        # summarise total count
-        df %>%
-          group_by(!!!syms(c(col00, this_val, "summarised_var"))) %>%
-          summarise(values = sum(conf_count, na.rm = TRUE), .groups = "drop") %>%
-          select(col = !!sym(this_col), val = !!sym(this_val), values) %>%
-          mutate(col = as.character(col), val = as.character(val)) %>%
-          return()
-      }
-    )
-    
-    # produce summary overview
-    count_df = count_list %>%
-      bind_rows() %>%
-      filter(!is.na(col)) %>%
-      group_by(col, val) %>%
-      summary_overview("count")
-    
-    out_file = write_files(count_df, "count")
-    output_files = c(output_files, out_file)
-  }
-  
-  #### distinct ----------------------------------------
-  if("conf_distinct" %in% colnames(df)){
-    # ensure numeric columns are stored as numeric
-    suppressWarnings({ df = dplyr::mutate(df, conf_distinct = as.numeric(conf_distinct)) })
-    
-    # produce summary overview
-    distinct_df = df %>%
-      select(summarised_var, values = conf_distinct) %>%
-      group_by(summarised_var) %>%
-      summary_overview("distinct")
-    
-    # write output
-    out_file = write_files(distinct_df, "distinct")
-    output_files = c(output_files, out_file)
-  }
-  
-  #### sum ----------------------------------------
-  if(all(c("conf_count", "conf_sum") %in% colnames(df))){
-    # ensure numeric columns are stored as numeric
-    suppressWarnings({ df = dplyr::mutate(df, conf_sum = as.numeric(conf_sum)) })
-    
-    # produce summary overview
-    sum_df = df %>%
-      mutate(avg = conf_sum / conf_count) %>%
-      select(summarised_var, values = avg) %>%
-      group_by(summarised_var) %>%
-      summary_overview("avg")
-    
-    # write output
-    out_file = write_files(sum_df, "average")
-    output_files = c(output_files, out_file)
-  }
-  
-  ## return list of files written --------------------
-  return(output_files)
 }

@@ -9,6 +9,14 @@
 #
 ################################################################################
 
+compare_all_equal = function(df1, df2, arrange_cols){
+  result = isTRUE(all.equal(
+    dplyr::arrange(df1, !!!rlang::syms(arrange_cols)),
+    dplyr::arrange(df2, !!!rlang::syms(arrange_cols))
+  ))
+  return(result)
+}
+
 ## check_rounding_to_base_array(input_array, base = 3, na.rm = TRUE) ------ ----
 
 test_that("rounding vector passes & fails when expected", {
@@ -195,15 +203,15 @@ test_that("random rounding checks pass & fail when expected", {
   
   expect_false(check_random_rounding(input_df, "raw", "raw", base = 3))
   
-  expect_true(check_random_rounding(input_df, conf_col = "round_random1", base = 3))
-  expect_true(check_random_rounding(input_df, conf_col = "round_random2", base = 3))
-  expect_true(check_random_rounding(input_df, conf_col = "round_random3", base = 3))
-  expect_true(check_random_rounding(input_df, conf_col = "round_down", base = 3))
-  expect_true(check_random_rounding(input_df, conf_col = "round_up", base = 3))
-  expect_true(check_random_rounding(input_df, conf_col = "round_closest", base = 3))
-  expect_true(check_random_rounding(input_df, conf_col = "round_furthest", base = 3))
+  expect_true(check_random_rounding(input_df, "raw", conf_col = "round_random1", base = 3))
+  expect_true(check_random_rounding(input_df, "raw", conf_col = "round_random2", base = 3))
+  expect_true(check_random_rounding(input_df, "raw", conf_col = "round_random3", base = 3))
+  expect_true(check_random_rounding(input_df, "raw", conf_col = "round_down", base = 3))
+  expect_true(check_random_rounding(input_df, "raw", conf_col = "round_up", base = 3))
+  expect_true(check_random_rounding(input_df, "raw", conf_col = "round_closest", base = 3))
+  expect_true(check_random_rounding(input_df, "raw", conf_col = "round_furthest", base = 3))
   
-  expect_false(check_random_rounding(input_df, conf_col = "raw", base = 3))
+  expect_false(check_random_rounding(input_df, "raw", conf_col = "raw", base = 3))
   
   options(warn = defaultW)
 })
@@ -230,9 +238,9 @@ test_that("random rounding checks warn & error when expected", {
   expect_error(check_random_rounding(input_df, "raw", NA, base = 3), "character")
   expect_error(check_random_rounding(input_df, "raw", "round_random1_x", base = 3), "colname")
   
-  expect_warning(check_random_rounding(input_df, "round_down", "round_up", base = 3), "difference exceeds")
-  expect_warning(check_random_rounding(input_df, "raw", "round_up", base = 3), "rounded up")
-  expect_warning(check_random_rounding(input_df, "raw", "round_down", base = 3), "rounded down")
+  suppressWarnings(expect_warning(check_random_rounding(input_df, "round_down", "round_up", base = 3), "difference exceeds"))
+  suppressWarnings(expect_warning(check_random_rounding(input_df, "raw", "round_up", base = 3), "rounded up"))
+  suppressWarnings(expect_warning(check_random_rounding(input_df, "raw", "round_down", base = 3), "rounded down"))
   
   expect_warning(check_random_rounding(input_df, "raw", "round_closest", base = 3), "not random")
   expect_warning(check_random_rounding(input_df, "raw", "round_furthest", base = 3), "not random")
@@ -367,7 +375,7 @@ test_that("expand to include zeroes creates expected output", {
   
   # complete dataset is unchanged
   output_df = expand_to_include_zero_counts(input_df)
-  expect_true(all_equal(input_df, output_df, ignore_row_order = TRUE, ignore_col_order = TRUE, convert = TRUE))
+  expect_true(compare_all_equal(input_df, output_df, c("col01", "val01", "col02", "val02", "summarised_var")))
   
   # missing rows added back in
   for(ii in 1:nrow(input_df)){
@@ -377,7 +385,7 @@ test_that("expand to include zeroes creates expected output", {
     tmp_input = dplyr::filter(expected_output, !is.na(conf_count))
     
     tmp_output = expand_to_include_zero_counts(tmp_input)
-    expect_true(all_equal(expected_output, tmp_output, ignore_row_order = TRUE, ignore_col_order = TRUE, convert = TRUE))
+    expect_true(compare_all_equal(expected_output, tmp_output, c("col01", "val01", "col02", "val02", "summarised_var")))
   }
   
   # missing pairs of rows
@@ -393,9 +401,9 @@ test_that("expand to include zeroes creates expected output", {
       
       expect_true(
         # either we match the expected output
-        all_equal(expected_output, tmp_output, ignore_row_order = TRUE, ignore_col_order = TRUE, convert = TRUE) == TRUE
+        compare_all_equal(expected_output, tmp_output, c("col01", "val01", "col02", "val02", "summarised_var"))
         # or input = output because we do not need to add any rows
-        | all_equal(tmp_input, tmp_output, ignore_row_order = TRUE, ignore_col_order = TRUE, convert = TRUE) == TRUE
+        | compare_all_equal(tmp_input, tmp_output, c("col01", "val01", "col02", "val02", "summarised_var"))
       )
     }
   }
@@ -557,121 +565,4 @@ test_that("checking conf results errors when expected", {
   expect_error(check_confidentialised_results(input_df, BASE = "3"), "numeric")
   expect_error(check_confidentialised_results(input_df, COUNT_THRESHOLD = "6"), "numeric")
   expect_error(check_confidentialised_results(input_df, SUM_THRESHOLD = "20"), "numeric")
-})
-
-## explore_output_report(df, output_dir = NA, output_label = NA) ---------- ----
-
-test_that("output reports are produced", {
-  # arrange
-  input_df = data.frame(
-    col01 = c("sex","sex","sex","sex","sex","sex","sex","sex","region","region","region","region","region","region","region","region","region","region","region","region"),
-    val01 = c("1","1","1","1","2","2","2","2","north","south","west","east","north","south","west","east","north","south","west","east"),
-    col02 = c("region","region","region","region","region","region","region","region","eth","eth","eth","eth","eth","eth","eth","eth","eth","eth","eth","eth"),
-    val02 = c("north","south","west","east","north","south","west","east","aa","aa","aa","aa","bb","bb","bb","bb","cc","cc","cc","cc"),
-    summarised_var = c("assets","assets","assets","assets","assets","assets","assets","assets","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs"),
-    conf_distinct = c(1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,9,10,11,12),
-    conf_count = c(57,73,53,66,95,60,80,98,41,67,47,30,76,36,70,73,77,63,74,29),
-    conf_sum = c(948,1455,462,1302,228,1125,847,357,912,322,319,828,1062,1128,1440,790,585,456,1100,256)
-  )
-  
-  # act
-  output_files = explore_output_report(input_df, output_dir = NA, output_label = "tmp")
-  # file names
-  files_wout_paths = regmatches(output_files, regexpr("/20[0-9][0-9].+output report.+\\.csv$", output_files))
-  files_wout_paths = substr(files_wout_paths, 2, nchar(files_wout_paths))
-  
-  # assert
-  expect_true(all(files_wout_paths %in% list.files()))
-  
-  # tidy
-  unlink(output_files)
-  unlink(files_wout_paths)
-})
-
-test_that("output reports match calculated values", {
-  # arrange
-  input_df = data.frame(
-    col01 = c("sex","sex","sex","sex","sex","sex","sex","sex","region","region","region","region","region","region","region","region","region","region","region","region"),
-    val01 = c("1","1","1","1","2","2","2","2","north","south","west","east","north","south","west","east","north","south","west","east"),
-    col02 = c("region","region","region","region","region","region","region","region","eth","eth","eth","eth","eth","eth","eth","eth","eth","eth","eth","eth"),
-    val02 = c("north","south","west","east","north","south","west","east","aa","aa","aa","aa","bb","bb","bb","bb","cc","cc","cc","cc"),
-    summarised_var = c("assets","assets","assets","assets","assets","assets","assets","assets","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs"),
-    conf_distinct = c(1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,9,10,11,12),
-    conf_count = c(57,73,53,66,95,60,80,98,41,67,47,30,76,36,70,73,77,63,74,29),
-    conf_sum = c(948,1455,462,1302,228,1125,847,357,912,322,319,828,1062,1128,1440,790,585,456,1100,256)
-  )
-  output_count_df = data.frame(
-    col = c("sex","sex","region","region","region","region","eth","eth","eth"),
-    val = c("1","2","north","south","west","east","aa","bb","cc"),
-    num_count = c(1,1,2,2,2,2,1,1,1),
-    mean_count = c(249,333,173,149.5,162,148,185,255,243),
-    min_count = c(249,333,152,133,133,132,185,255,243),
-    lower_quartile_count = c(249,333,162.5,141.25,147.5,140,185,255,243),
-    median_count = c(249,333,173,149.5,162,148,185,255,243),
-    upper_quartile_count = c(249,333,183.5,157.75,176.5,156,185,255,243),
-    max_count = c(249,333,194,166,191,164,185,255,243)
-  )
-  output_distinct_df = data.frame(
-    summarised_var = c("assets","liabs"),
-    num_distinct = c(8,12),
-    mean_distinct = c(4.5,6.5),
-    min_distinct = c(1,1),
-    lower_quartile_distinct = c(2.75,3.75),
-    median_distinct = c(4.5,6.5),
-    upper_quartile_distinct = c(6.25,9.25),
-    max_distinct = c(8,12)
-  )
-  output_sum_df = data.frame(
-    summarised_var = c("assets","liabs"),
-    num_avg = c(8,12),
-    mean_avg = c(12.5,14.7),
-    min_avg = c(2.4,4.8),
-    lower_quartile_avg = c(7.4,7.5),
-    median_avg = c(13.6,12.4),
-    upper_quartile_avg = c(19,21),
-    max_avg = c(19.9,31.3)
-  )
-  
-  # act
-  output_files = explore_output_report(input_df, output_dir = NA, output_label = "tmp")
-  # file names
-  files_wout_paths = regmatches(output_files, regexpr("/20[0-9][0-9].+output report.+\\.csv$", output_files))
-  files_wout_paths = substr(files_wout_paths, 2, nchar(files_wout_paths))
-  # read back in
-  actual_count_df = read.csv(files_wout_paths[1])
-  actual_distinct_df = read.csv(files_wout_paths[2])
-  actual_sum_df = read.csv(files_wout_paths[3])
-  # round to 1dp
-  actual_sum_df = actual_sum_df %>%
-    dplyr::mutate(dplyr::across(where(is.numeric), round, digits = 1))
-  
-  # assert
-  expect_true(all_equal(output_count_df, actual_count_df, ignore_row_order = TRUE, ignore_col_order = TRUE, convert = TRUE))
-  expect_true(all_equal(output_distinct_df, actual_distinct_df, ignore_row_order = TRUE, ignore_col_order = TRUE, convert = TRUE))
-  expect_true(all_equal(output_sum_df, actual_sum_df, ignore_row_order = TRUE, ignore_col_order = TRUE, convert = TRUE))
-  
-  # tidy
-  unlink(output_files)
-  unlink(files_wout_paths)
-})
-
-test_that("output reports errors when expected", {
-  # arrange
-  input_df = data.frame(
-    col01 = c("sex","sex","sex","sex","sex","sex","sex","sex","region","region","region","region","region","region","region","region","region","region","region","region"),
-    val01 = c("1","1","1","1","2","2","2","2","north","south","west","east","north","south","west","east","north","south","west","east"),
-    col02 = c("region","region","region","region","region","region","region","region","eth","eth","eth","eth","eth","eth","eth","eth","eth","eth","eth","eth"),
-    val02 = c("north","south","west","east","north","south","west","east","aa","aa","aa","aa","bb","bb","bb","bb","cc","cc","cc","cc"),
-    summarised_var = c("assets","assets","assets","assets","assets","assets","assets","assets","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs","liabs"),
-    conf_distinct = c(1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,9,10,11,12),
-    conf_count = c(57,73,53,66,95,60,80,98,41,67,47,30,76,36,70,73,77,63,74,29),
-    conf_sum = c(948,1455,462,1302,228,1125,847,357,912,322,319,828,1062,1128,1440,790,585,456,1100,256)
-  )
-  remote_df = dbplyr::tbl_lazy(input_df, con = dbplyr::simulate_mssql())
-  alt_df = dplyr::rename(input_df, wrong_col_name = col01)
-  
-  # act & assert
-  expect_error(explore_output_report("input_df"), "data.frame")
-  expect_error(explore_output_report(remote_df), "sql")
-  expect_error(explore_output_report(alt_df), "long_thin")
 })

@@ -2,8 +2,7 @@
 % Please edit documentation in R/fct_check_confidential.R
 \name{check_small_count_suppression}
 \alias{check_small_count_suppression}
-\title{Returns TRUE if the provided column in the dataframe has no values where the
-count is less than the threshold.}
+\title{Check small count suppression}
 \usage{
 check_small_count_suppression(
   df,
@@ -12,7 +11,22 @@ check_small_count_suppression(
   count_col = suppressed_col
 )
 }
+\arguments{
+\item{df}{the data.frame to check for suppression.}
+
+\item{suppressed_col}{the name of the column to check for suppression.}
+
+\item{threshold}{the minimum acceptable count. Values less than (but not
+equal to) the threshold should be suppressed.}
+
+\item{count_col}{the name of the column to compare with the threshold.
+Optional, defaults to \code{suppress_col} if not provided. The intention is that
+\code{count_col} contains the counts of unit records.}
+}
+\value{
+T/F, whether all records in \code{suppress_col} are suppressed (replaced
+with missing) where the count is below the threshold.
+}
 \description{
-We expect: suppressed_col = NA if count_col < threshold.
-Threshold is the smallest acceptable count.
+Check small count suppression
 }

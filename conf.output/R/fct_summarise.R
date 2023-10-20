@@ -212,7 +212,7 @@ summarise_and_label <- function(
   if(remove.na.from.groups){
     # apply filters in a single step
     tmp = paste0(" !is.na(", group_by_cols, ") ")
-    df = dplyr::filter(df, `!!!`(rlang::parse_exprs(tmp)))
+    df = dplyr::filter(df, !!!rlang::parse_exprs(tmp))
   }
   
   if(clean == "na.as.zero"){
@@ -264,9 +264,9 @@ summarise_and_label <- function(
     col = sprintf("col%02d", ii)
     val = sprintf("val%02d", ii)
     
-    output_df[[col]] = group_by_cols[ii]
-    output_df = dplyr::rename(output_df, !!rlang::sym(val) := !!rlang::sym(group_by_cols[ii]))
-    output_df[[val]] = as.character(output_df[[val]])
+    output_df[[col]] = group_by_cols[ii] # assign text
+    colnames(output_df)[colnames(output_df) == (group_by_cols[ii])] = val # rename
+    output_df[[val]] = as.character(output_df[[val]]) # convert to character
     
     col_order = c(col_order, col, val)
   }
@@ -283,7 +283,7 @@ summarise_and_label <- function(
   }
   
   output_df = dplyr::mutate(output_df, summarised_var = summarise_col)
-  output_df = dplyr::select(output_df, !!!rlang::syms(col_order))
+  output_df = dplyr::select(output_df, dplyr::all_of(col_order))
   
   #### conclude ----
   stopifnot(has_long_thin_format(output_df))
