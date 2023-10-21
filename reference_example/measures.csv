@@ -1,0 +1,11 @@
+File,Database_name,Schema_name,Table_name,Identity_column,Measure_period_start_date,Measure_period_end_date,Label_measure,Value_measure,Measure_summarised_by,Proportional,NOTES/DESCRIPTION
+,[IDI_Clean],[data],[personal_detail],[snz_uid],"""1900-01-01""","""9999-12-31""","""birth_year""",[snz_birth_year_nbr],MAX,FALSE,Year of birth date
+,[IDI_Clean],[data],[personal_detail],[snz_uid],"""1900-01-01""","""9999-12-31""","""eth_asian""",[snz_ethnicity_grp4_nbr],MAX,FALSE,Indicator for Asian ethnicity
+,[IDI_Clean],[data],[personal_detail],[snz_uid],"""1900-01-01""","""9999-12-31""","""eth_european""",[snz_ethnicity_grp1_nbr],MAX,FALSE,Indicator for European ethnicity
+,[IDI_Clean],[data],[personal_detail],[snz_uid],"""1900-01-01""","""9999-12-31""","""eth_maori""",[snz_ethnicity_grp2_nbr],MAX,FALSE,Indicator for Maori ethnicity
+,[IDI_Clean],[data],[personal_detail],[snz_uid],"""1900-01-01""","""9999-12-31""","""eth_MELAA""",[snz_ethnicity_grp5_nbr],MAX,FALSE,Indicator for MELAA ethnicity
+,[IDI_Clean],[data],[personal_detail],[snz_uid],"""1900-01-01""","""9999-12-31""","""eth_other""",[snz_ethnicity_grp6_nbr],MAX,FALSE,Indicator for Other ethnicity
+,[IDI_Clean],[data],[personal_detail],[snz_uid],"""1900-01-01""","""9999-12-31""","""eth_pacific""",[snz_ethnicity_grp3_nbr],MAX,FALSE,Indicator for Pacific ethnicity
+example_measure_employment.sql,[IDI_UserCode],[DL-MAA20XX-YY],[defn_employed],[snz_uid],[period_start_date],[ir_ems_return_period_date],"""total_earnings""",[ir_ems_gross_earnings_amt],SUM,FALSE,total W&S earnings from quarter
+example_measure_employment.sql,[IDI_UserCode],[DL-MAA20XX-YY],[defn_employed],[snz_uid],[period_start_date],[ir_ems_return_period_date],"""was_employed""","""1""",EXISTS,FALSE,indicator for whether or not person was employed
+example_measure_employment.sql,[IDI_UserCode],[DL-MAA20XX-YY],[defn_employed],[snz_uid],[period_start_date],[ir_ems_return_period_date],"""num_EMS""","""1""",COUNT,FALSE,number of EMS returns (>12 must have more than one job)

@@ -1,0 +1,3 @@
+File,Database_name,Schema_name,Table_name,Identity_column,Label_identity,Summary_period_start_date,Summary_period_end_date,Label_summary_period
+example_population_2018_residents.sql,[IDI_UserCode],[DL-MAA20XX-YY],[defn_2018_residents],[snz_uid],"""residents""","""2018-01-01""","""2018-12-31""","""2018"""
+example_population_2018_residents.sql,[IDI_UserCode],[DL-MAA20XX-YY],[defn_2018_residents],[snz_uid],"""residents""","""2019-01-01""","""2019-12-31""","""2019"""

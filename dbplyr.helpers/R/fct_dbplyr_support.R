@@ -186,7 +186,7 @@ table_contains_required_columns = function(tbl_to_check, required_columns, only 
 #' concern.
 #' 
 #' @param query the text of the query to save. This may be generated using
-#' `dbplyr::show_query` where required.
+#' `dplyr::show_query` where required.
 #' @param desc a description of the query. Use to name the file.
 #' @param query_path The path to save the query. If provided will attempt to
 #' save a copy of the query to the provided folder. Skips of no path.
