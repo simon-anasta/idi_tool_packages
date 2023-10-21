@@ -8,7 +8,7 @@ save_to_sql_script(query, desc, query_path = NA)
 }
 \arguments{
 \item{query}{the text of the query to save. This may be generated using
-\code{dbplyr::show_query} where required.}
+\code{dplyr::show_query} where required.}
 
 \item{desc}{a description of the query. Use to name the file.}
 

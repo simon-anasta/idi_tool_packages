@@ -1,6 +1,6 @@
 Package: conf.output
 Title: Consistent tools for summarising, confidentialising, and reviewing confidentiality
-Version: 0.0.1
+Version: 1.0.0
 Authors@R: 
     person("Simon", "Anastasiadis", , "simon.anastasiadis@gmail.com", role = c("aut", "cre"))
 Description: Within the IDI, all output must be summarised and confidentialised prior to its release. For this purpose we developed methods to produce our most common types of summaries and to confidentialise them. To give increased confidence there are also separate functions to check the correctness of the applied confidentiality. This package bundles all three sets of functionailty into a single collection that works with both in-memory and remote/SQL data.

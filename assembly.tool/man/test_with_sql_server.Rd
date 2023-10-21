@@ -25,7 +25,9 @@ recommended that the connection be to the database in \code{view_db}.}
 
 \item{query_path}{If provided will attempt to save a copy of the SQL code
 sent to/executed on the database to the provided folder. Save occurs before
-execution, hence useful for debugging.}
+execution, hence useful for debugging.
+Due to how testing is implemented, must be an absolute path (not a relative
+path) for this function.}
 }
 \description{
 The original version of this package was developed using SQL Server within
