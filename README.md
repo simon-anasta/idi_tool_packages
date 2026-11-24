@@ -1,3 +1,5 @@
+Archived 2026 - the tools this converts to packages have been superseded. See the ADAPT toolkit published by the Social Investment Agency (New Zealand) for the newer tools.
+
 # IDI Tools as R packages
 Rework R tools for IDI analysis into packages
 
